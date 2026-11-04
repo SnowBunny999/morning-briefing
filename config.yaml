@@ -1,0 +1,111 @@
+# ============================================================
+# 每日财经早报 Agent 配置
+# 只需要改这个文件就能增删信源、调整采集窗口
+# 密钥（API Key 等）不要写在这里，用环境变量 / GitHub Secrets
+# ============================================================
+
+# 采集窗口：只保留最近 N 小时内的新闻
+# 18 小时大致覆盖「隔夜美股交易时段 + 国内前一工作日收盘后到早上」
+time_window_hours: 18
+
+# 喂给 LLM 的最大条目数（控制成本，太多会超 token）
+max_items_for_llm: 60
+
+# 信源列表
+#   region: "global" 国际/全球市场   "cn" 国内/A股/政策
+#   type:   省略=RSS 源；"json"=JSON API 源（需配 items_path 等字段）
+#   单个源失效会被自动跳过，不影响整体
+sources:
+  # ---------- 国际 / 全球市场（RSS，从 GitHub 云服务器可稳定访问） ----------
+  - name: "CNBC Markets"
+    region: "global"
+    url: "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000664"
+  - name: "MarketWatch"
+    region: "global"
+    url: "http://feeds.marketwatch.com/marketwatch/topstories/"
+  - name: "Investing.com"
+    region: "global"
+    url: "https://www.investing.com/rss/news.rss"
+  - name: "Yahoo Finance"
+    region: "global"
+    url: "https://finance.yahoo.com/news/rssindex"
+  - name: "AP Top News"
+    region: "global"
+    url: "https://feeds.apnews.com/rss/apf-topnews"
+
+  # ---------- 国内 / A股 / 政策 ----------
+  # 新浪滚动新闻（JSON API，已验证稳定可用，覆盖国内财经/政策/A股）——国内主源
+  - name: "新浪滚动-财经"
+    region: "cn"
+    type: "json"
+    url: "https://feed.mix.sina.com.cn/api/roll/get?pageid=153&lid=2516&k=&num=30&order=1"
+    items_path: "result.data"
+    title_field: "title"
+    summary_field: "intro"
+    link_field: "url"
+    time_field: "ctime"          # Unix 秒级时间戳
+
+  # 长城证券·实时资讯（JSON API，已验证稳定可用；需带 appPlatform/appVerName 头）
+  # 这就是你说的“每日早间要闻”背后的实时资讯流，含标题+正文+北京时间
+  - name: "长城证券-实时资讯"
+    region: "cn"
+    type: "json"
+    url: "https://fintechapp.cgws.com/api/business-news/app/a/news/collection/latest/list?lastNewsId=0"
+    items_path: "data"
+    title_field: "title"
+    summary_field: "content"
+    link_field: "jumpUrl"
+    time_field: "time"
+    time_format: "%Y年%m月%d日 %H:%M"   # 北京时间字符串
+    headers:
+      appPlatform: "android"
+      appVerName: "1.0.0"
+      Content-Type: "application/json; charset=utf-8"
+
+  # 金十数据·电报（JSON API，需带 Origin/Referer 头；在 GitHub 上通常可用，沙箱可能被拦）
+  # 验证后保留；若 Actions 日志显示 0 条或报错，告诉我，我按真实返回结构微调字段
+  - name: "金十数据-电报"
+    region: "cn"
+    type: "json"
+    url: "https://flash-api.jin10.com/api/flash/list?channel=-1&v=3"
+    items_path: "data.flash_list"
+    title_field: "content"       # 金十电报没有标题，正文即要点
+    link_field: "url"
+    time_field: "pub_time"       # Unix 时间戳（秒或毫秒均可）
+    headers:
+      Origin: "https://www.jin10.com"
+      Referer: "https://www.jin10.com/"
+      X-Requested-With: "XMLHttpRequest"
+
+  # 财联社·电报（JSON API，低置信度：接口需前端签名+限流，GitHub 上也未必稳定）
+  # 已在代码里做了“列表自动探测 + 标题回退”，能跑就跑，跑不了自动跳过
+  - name: "财联社-电报"
+    region: "cn"
+    type: "json"
+    url: "https://www.cls.cn/api/v1/telegraph?page=1&rn=10"
+    items_path: "data"
+    title_field: "content"
+    time_field: "time"
+    time_format: "%Y-%m-%d %H:%M:%S"   # 财联社时间是北京时间字符串
+    headers:
+      Referer: "https://www.cls.cn/telegraph"
+      X-Requested-With: "XMLHttpRequest"
+
+  # 以下为可选 RSS 源：部分国内站点 RSS 路径可能变动，失效会自动跳过，不影响整体
+  - name: "华尔街见闻"
+    region: "cn"
+    url: "https://wallstreetcn.com/rss/news"
+  - name: "证券时报"
+    region: "cn"
+    url: "http://www.stcn.com/rss/"
+  - name: "财新"
+    region: "cn"
+    url: "https://www.caixin.com/rss/"
+
+# 说明：
+# - 已在本环境实测稳定可用的主源：CNBC、MarketWatch（全球）+ 新浪滚动（国内）。
+# - 金十、财联社为“尽力而为”的可选源：本沙箱被反爬/限流挡住，需在 GitHub 上首次运行验证；
+#   跑不了会自动跳过，不影响你收到早报。若 Actions 日志里它们显示 0 条，把日志发我，我按真实
+#   返回结构微调字段即可。
+# - 长城证券没有干净的每日要闻接口（官网只有旧 PDF 晨报，内容也被同花顺转载）。如果你有具体
+#   的“每日早间要闻”页面地址，发我，我帮你接成 RSS/JSON 源。
