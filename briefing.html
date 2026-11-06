@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>📈 财经早报 · 2026-11-06</title>
+<style>
+  :root { --bg:#0f1420; --card:#1a2233; --fg:#e8edf5; --muted:#9aa7bd; --accent:#4f8cff; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg);
+         font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;
+         line-height:1.75; padding:60px 14px 90px; -webkit-text-size-adjust:100%; }
+  .bar { position:fixed; top:0; left:0; right:0; z-index:50;
+         display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+         padding:9px 12px calc(9px + env(safe-area-inset-top,0px));
+         background:rgba(15,20,32,.95); backdrop-filter:blur(8px);
+         border-bottom:1px solid #2a3450; }
+  .bar button { font-size:15px; padding:9px 16px; border:none; border-radius:999px;
+                background:var(--accent); color:#fff; cursor:pointer; font-weight:600; }
+  .bar button:active { transform:scale(.96); }
+  .bar select { font-size:14px; padding:7px 8px; border-radius:8px;
+                border:1px solid #2a3450; background:#13203a; color:var(--fg); }
+  .bar .state { font-size:12px; color:var(--muted); margin-left:auto; white-space:nowrap; }
+  .bar .state.on { color:#6ee7a8; }
+  .bar .toggle { font-size:12px; padding:6px 10px; background:#243354; }
+  .bar .toggle.off { background:#3a3a44; color:var(--muted); }
+  .wrap { max-width:760px; margin:0 auto; }
+  .card { background:var(--card); border:1px solid #2a3450; border-radius:14px;
+          padding:16px 18px; }
+  .cue { border-radius:8px; padding:3px 9px; margin:2px -9px;
+         transition:background .25s, box-shadow .25s, color .25s; }
+  .cue.h1 { font-size:23px; font-weight:700; margin:2px 0 10px; }
+  .cue.h2 { font-size:18px; font-weight:700; color:#cfe0ff; margin:20px 0 7px;
+            border-left:4px solid var(--accent); border-radius:0 8px 8px 0; padding:4px 10px; }
+  .cue.li { position:relative; padding-left:22px; }
+  .cue.li:before { content:"•"; position:absolute; left:9px; color:var(--accent); }
+  .cue.quote { color:var(--muted); background:#13203a; border-left:4px solid #4f8cff; }
+  .cue.detail { color:var(--muted); font-size:.86em; line-height:1.6;
+                background:#13203a; border-left:2px solid #33456b; border-radius:0 6px 6px 0;
+                padding:5px 10px; margin:2px 0 9px 22px; }
+  .cue.detail a { color:#8ab4ff; text-decoration:none; border-bottom:1px dotted #8ab4ff; }
+  .cue.active { background:rgba(79,140,255,.22); box-shadow:inset 3px 0 0 var(--accent);
+                color:#fff; }
+  .src { color:var(--muted); font-size:.8em; opacity:.72; font-weight:400; }
+  .foot { color:var(--muted); font-size:12px; text-align:center; margin-top:18px; }
+  .overlay { display:none; position:fixed; inset:0; z-index:100;
+             flex-direction:column; align-items:center; justify-content:center; gap:16px;
+             background:rgba(15,20,32,.97); text-align:center; padding:24px; }
+  .overlay button { font-size:22px; padding:20px 46px; border:none; border-radius:999px;
+                    background:var(--accent); color:#fff; cursor:pointer; font-weight:700;
+                    box-shadow:0 8px 30px rgba(79,140,255,.45); }
+  .overlay small { color:var(--muted); font-size:13px; }
+  a { color:var(--accent); }
+</style>
+</head>
+<body>
+  <div class="overlay" id="overlay">
+    <button id="startBtn">语音版</button>
+    <small>点一下即播 · 播放时屏幕保持常亮</small>
+  </div>
+  <div class="bar">
+    <select id="rate" title="朗读语速">
+      <option value="0.85">0.85x</option>
+      <option value="1" selected>1.0x</option>
+      <option value="1.2">1.2x</option>
+      <option value="1.4">1.4x</option>
+    </select>
+    <button id="playBtn">语音版</button>
+    <button id="followBtn" class="toggle" title="文字跟随朗读滚动">跟随：开</button>
+    <span class="state" id="wakeState">屏幕常亮：待播放</span>
+  </div>
+  <div class="wrap">
+    <div class="card" id="content"><h1 class="cue h1" data-i="0">📈 财经早报 · 2026-11-06</h1>
+<h2 class="cue h2" data-i="1">今日重点</h2>
+<div class="cue li" data-i="2">巴拉圭当局在弹劾后下令逮捕前总统<span class="src">（来源：Investing.com）</span>。中性</div>
+<div class="cue detail" data-i="2"><a href="https://www.investing.com/news/economy-news/paraguay-authorities-order-expresidents-arrest-after-impeachment-5009375" target="_blank" rel="noopener">原文</a></div>
+<div class="cue li" data-i="4">美国财政部因与伊朗有关的交易而制裁加拿大货币服务公司<span class="src">（来源：Investing.com）</span>。中性</div>
+<div class="cue detail" data-i="4"><a href="https://www.investing.com/news/forex-news/us-treasury-sanctions-canadian-money-services-firms-over-iranrelated-transactions-5009126" target="_blank" rel="noopener">原文</a></div>
+<div class="cue li" data-i="6">“这看起来很奇怪” ：我们80多岁，传统IRA有95万美元$。为什么我们的顾问要推动Roth的转化？<span class="src">（来源：MarketWatch）</span>。中性</div>
+<div class="cue detail" data-i="6"><a href="https://www.marketwatch.com/story/it-seems-bizarre-were-in-our-80s-with-950-000-in-traditional-iras-why-is-our-adviser-pushing-us-to-do-roth-conversions-a665f990?mod=mw_rss_topstories" target="_blank" rel="noopener">原文</a></div>
+<div class="cue li" data-i="8">险企董监高任职资格新规征求意见<span class="src">（来源：长城证券-实时资讯）</span>。中性</div>
+<div class="cue detail" data-i="8"><a href="https://fintechappdr.cgws.com/h5/information-page/html/information.html?id=217319127" target="_blank" rel="noopener">原文</a></div>
+<div class="cue li" data-i="10">巴拉圭参议院因银行丑闻罢免总统<span class="src">（来源：新浪滚动-财经）</span>。中性</div>
+<div class="cue detail" data-i="10"><a href="https://finance.sina.com.cn/stock/usstock/c/2026-11-07/doc-inixwakq5276245.shtml" target="_blank" rel="noopener">原文</a></div>
+<h2 class="cue h2" data-i="12">🌍 全球股市与美股</h2>
+<div class="cue li" data-i="13">bioAffinity Technologies盈利增长25.61 $ ，营收低于预期<span class="src">（来源：Investing.com）</span>。利空海外市场</div>
+<div class="cue detail" data-i="13"><a href="https://www.investing.com/news/earnings/bioaffinity-technologies-earnings-beat-by-2561-revenue-fell-short-of-estimates-5009367" target="_blank" rel="noopener">原文</a></div>
+<div class="cue li" data-i="15">Shuttle Pharmaceuticals任命Bush &amp; Associates为新审计师<span class="src">（来源：Investing.com）</span>。中性</div>
+<div class="cue detail" data-i="15"><a href="https://www.investing.com/news/sec-filings/shuttle-pharmaceuticals-names-bush--associates-as-new-auditor-93CH-5009366" target="_blank" rel="noopener">原文</a></div>
+<div class="cue li" data-i="17">Mangoceuticals董事会和优先股股东批准新的D系列优先股<span class="src">（来源：Investing.com）</span>。中性</div>
+<div class="cue detail" data-i="17"><a href="https://www.investing.com/news/sec-filings/mangoceuticals-board-and-preferred-shareholder-approve-new-series-d-preferred-stock-93CH-5009364" target="_blank" rel="noopener">原文</a></div>
+<div class="cue li" data-i="19">DelphX Capital Markets完成55,000加元的私募<span class="src">（来源：Investing.com）</span>。中性</div>
+<div class="cue detail" data-i="19"><a href="https://www.investing.com/news/company-news/delphx-capital-markets-closes-c55000-private-placement-93CH-5009363" target="_blank" rel="noopener">原文</a></div>
+<div class="cue li" data-i="21">Pono Capital Four修改与Blackstar Orbital的合并协议，降低收购价格<span class="src">（来源：Investing.com）</span>。利空海外市场</div>
+<div class="cue detail" data-i="21"><a href="https://www.investing.com/news/sec-filings/pono-capital-four-amends-merger-agreement-with-blackstar-orbital-reduces-purchase-price-93CH-5009361" target="_blank" rel="noopener">原文</a></div>
+<h2 class="cue h2" data-i="23">🏛 宏观与政策</h2>
+<div class="cue li" data-i="24">巴拉圭当局在弹劾后下令逮捕前总统<span class="src">（来源：Investing.com）</span>。中性</div>
+<div class="cue detail" data-i="24"><a href="https://www.investing.com/news/economy-news/paraguay-authorities-order-expresidents-arrest-after-impeachment-5009375" target="_blank" rel="noopener">原文</a></div>
+<div class="cue li" data-i="26">美联储的戴利表示，美国人正处于“高通胀的跑步机”上，可能会有更多的加息<span class="src">（来源：CNBC Markets）</span>。中性</div>
+<div class="cue detail" data-i="26">旧金山联储主席玛丽·戴利（ Mary Daly ）称周五的就业报告“对美国工人来说是个好消息” ，但指出通货膨胀正在对家庭财务施加压力  <a href="https://www.cnbc.com/2026/11/06/fed-daly-interest-rates-inflation.html" target="_blank" rel="noopener">原文</a></div>
+<div class="cue li" data-i="28">11月7日外盘头条：美国10月非农大超预期 特朗普任命米勒出任白宫幕僚长 特斯拉将逐步停产Cybertruck<span class="src">（来源：新浪滚动-财经）</span>。利空全球市场</div>
+<div class="cue detail" data-i="28">全球财经媒体昨夜今晨共同关注的头条新闻主要有： 1、美国10月非农新增16.5万人远超预期 失业率降至4.1% 劳动力市场强劲 2、中期选举失利后  <a href="https://finance.sina.com.cn/stock/usstock/c/2026-11-07/doc-inixwakn8483750.shtml" target="_blank" rel="noopener">原文</a></div>
+<div class="cue li" data-i="30">巴拉圭国会通过对总统培尼亚的弹劾议案<span class="src">（来源：新浪滚动-财经）</span>。中性</div>
+<div class="cue detail" data-i="30">巴拉圭国会6日通过对总统培尼亚的弹劾议案，解除其总统职务  <a href="https://finance.sina.com.cn/jjxw/2026-11-07/doc-inixwakk5010236.shtml" target="_blank" rel="noopener">原文</a></div>
+<div class="cue li" data-i="32">选举结果不改OpenAI扩张计划，CFO称将继续投资数据中心并融资<span class="src">（来源：新浪滚动-财经）</span>。中性</div>
+<div class="cue detail" data-i="32">OpenAI首席财务官Sarah Friar周五表示，公司将继续投资人工智能基础设施，即便选民在周二的中期选举中强烈反对数据中心  <a href="https://finance.sina.com.cn/stock/usstock/c/2026-11-07/doc-inixwakk5004883.shtml" target="_blank" rel="noopener">原文</a></div>
+<h2 class="cue h2" data-i="34">🛢 大宗商品</h2>
+<div class="cue li" data-i="35">今日无重大相关消息</div>
+<h2 class="cue h2" data-i="36">🛢 原油与能源</h2>
+<div class="cue li" data-i="37">美国财政部因与伊朗有关的交易而制裁加拿大货币服务公司<span class="src">（来源：Investing.com）</span>。中性</div>
+<div class="cue detail" data-i="37"><a href="https://www.investing.com/news/forex-news/us-treasury-sanctions-canadian-money-services-firms-over-iranrelated-transactions-5009126" target="_blank" rel="noopener">原文</a></div>
+<div class="cue li" data-i="39">11月7日隔夜要闻：美股涨跌不一纳指涨超1% 油价震荡 金价走低 俄美乌三方会谈将于11月10日在阿布扎比举行<span class="src">（来源：新浪滚动-财经）</span>。利空油价</div>
+<div class="cue detail" data-i="39">市场 11月7日收盘：三大指数涨跌不一 芯片股反弹 AI监管担忧仍存 11月7日热门中概股多数上涨，台积电涨超6%，理想汽车涨超5% 大宗商品综述：油价走势震荡 铜价下跌  <a href="https://finance.sina.com.cn/stock/usstock/c/2026-11-07/doc-inixwakh8379297.shtml" target="_blank" rel="noopener">原文</a></div>
+<div class="cue li" data-i="41">初步报告显示两枚导弹击中伊朗格什姆岛<span class="src">（来源：新浪滚动-财经）</span>。中性</div>
+<div class="cue detail" data-i="41">总台记者7日自伊朗方面获悉，根据初步报告，当天凌晨两枚导弹击中了格什姆岛。伊朗官方尚未公布细节。据称，爆炸可能是美国空袭，目标是位于格什姆岛上的伊朗防空导弹发射  <a href="https://finance.sina.com.cn/jjxw/2026-11-07/doc-inixwakk5020029.shtml" target="_blank" rel="noopener">原文</a></div>
+<div class="cue li" data-i="43">大宗商品综述：油价走势震荡 铜价下跌 金价走低<span class="src">（来源：新浪滚动-财经）</span>。利空油价</div>
+<div class="cue detail" data-i="43">油价走势震荡，交易员关注伊朗战争降级前景。铜价跌至7月以来最低水平，美国政治格局变化可能削弱两大看涨因素。金价下跌，强劲的美国非农就业数据强化了市场对美联储将加  <a href="https://finance.sina.com.cn/stock/usstock/c/2026-11-07/doc-inixwakn8486854.shtml" target="_blank" rel="noopener">原文</a></div>
+<div class="cue li" data-i="45">伊朗南部格什姆岛传出爆炸声<span class="src">（来源：新浪滚动-财经）</span>。中性</div>
+<div class="cue detail" data-i="45">总台记者7日自伊朗方面获悉，据当地居民反馈，当天凌晨该国南部格什姆岛传出爆炸声。目前官方暂未发布相关说明。（总台记者 李健南）©2026中央广播电视总台版权所有  <a href="https://finance.sina.com.cn/jjxw/2026-11-07/doc-inixwakh8362039.shtml" target="_blank" rel="noopener">原文</a></div>
+<h2 class="cue h2" data-i="47">🇨🇳 国内财经与 A股前瞻</h2>
+<div class="cue li" data-i="48">中国移动加大算力投资 未来两年智算能力将连续翻番<span class="src">（来源：长城证券-实时资讯）</span>。中性</div>
+<div class="cue detail" data-i="48">证券时报记者 刘灿邦 “每一种经济形态，都有与之相适应的基础设施。新的智能经济，需要有新的基础设施。” 11月6日，在2026移动网络大会上，中国移动董事长陈  <a href="https://fintechappdr.cgws.com/h5/information-page/html/information.html?id=217319135" target="_blank" rel="noopener">原文</a></div>
+<div class="cue li" data-i="50">原材料价格单日上调万元 钨产业链上下游博弈加剧<span class="src">（来源：长城证券-实时资讯）</span>。利好A股</div>
+<div class="cue detail" data-i="50">证券时报记者 黄翔 钨产业链价格波动再受关注。据百川盈孚数据，11月5日仲钨酸铵（APT）主流报价较上一工作日上调1万元/吨，达到53万—55万元/吨，较上周上涨4.85%  <a href="https://fintechappdr.cgws.com/h5/information-page/html/information.html?id=217319134" target="_blank" rel="noopener">原文</a></div>
+<div class="cue li" data-i="52">生猪期货价格两月跌近三成 行业深亏局面难改<span class="src">（来源：长城证券-实时资讯）</span>。利空A股</div>
+<div class="cue detail" data-i="52">证券时报记者 赵黎昀 经历持续震荡下行，截至11月6日收盘，国内期货市场生猪主力合约价格已跌至9195元/吨，此前在11月5日触及9040元/吨的上市以来低点，较9月初最大跌  <a href="https://fintechappdr.cgws.com/h5/information-page/html/information.html?id=217319133" target="_blank" rel="noopener">原文</a></div>
+<div class="cue li" data-i="54">机构调研热度居高不下 科技企业力证AI需求持续旺盛<span class="src">（来源：长城证券-实时资讯）</span>。中性</div>
+<div class="cue detail" data-i="54">证券时报记者 张一帆 本周（11月1日至6日）机构调研热度居高不下，逾550家上市公司迎来投资者调研，AI（人工智能）产业链景气度、内需复苏节奏、重点行业价格变化是调  <a href="https://fintechappdr.cgws.com/h5/information-page/html/information.html?id=217319132" target="_blank" rel="noopener">原文</a></div>
+<div class="cue li" data-i="56">港股增持潮来了 A+H公司双向出击<span class="src">（来源：长城证券-实时资讯）</span>。利好港股</div>
+<div class="cue detail" data-i="56">证券时报记者 钟恬 11月6日，博雷顿逆市大涨10.16%，成交额1.51亿港元，是前一日的3倍多。这是又一家因披露增持计划股价大涨的港股公司。 近期港股市场  <a href="https://fintechappdr.cgws.com/h5/information-page/html/information.html?id=217319131" target="_blank" rel="noopener">原文</a></div>
+<h2 class="cue h2" data-i="58">📅 今日重要数据/事件</h2>
+<div class="cue li" data-i="59">美国10月非农新增16.5万人远超预期 失业率降至4.1% 劳动力市场强劲<span class="src">（来源：新浪滚动-财经）</span>。利空全球市场</div>
+<div class="cue detail" data-i="59">美国10月就业增长大幅加快，失业率小幅下降，显示在经济持续扩张之际，劳动力市场表现强劲。 美国劳工统计局周五公布的数据显示，10月非农就业人数增加16.5万人  <a href="https://finance.sina.com.cn/stock/usstock/c/2026-11-07/doc-inixvwak8461751.shtml" target="_blank" rel="noopener">原文</a></div>
+<h2 class="cue h2" data-i="61">💰 行情：美股指数 / 黄金 / 数字货币 / 原油</h2>
+<div class="cue li" data-i="62">📊 <b>标普500</b>：7,376.86，+0.31%　<i>利好美股</i></div>
+<div class="cue li" data-i="63">📊 <b>纳斯达克</b>：24,579.42，+1.09%　<i>利好美股</i></div>
+<div class="cue li" data-i="64">🥇 <b>黄金</b>：行情获取失败，今日跳过</div>
+<div class="cue li" data-i="65">₿ <b>比特币 BTC</b>：75,919 美元（≈ 506,479 元），+0.67%　<i>利好币价</i></div>
+<div class="cue li" data-i="66">⟠ <b>以太坊 ETH</b>：2,238 美元（≈ 14,927 元），+0.92%　<i>利好币价</i></div>
+<div class="cue li" data-i="67">🛢 <b>WTI 原油</b>：90.34 美元/桶，-0.20%　<i>利空油价</i></div>
+<div class="cue li" data-i="68">🛢 <b>布伦特原油</b>：97.76 美元/桶，-0.54%　<i>利空油价</i></div></div>
+    <audio id="player" src="briefing.mp3" preload="auto" controls style="width:100%;margin:14px 0 4px"></audio>
+    <div class="foot">女声朗读 · 图标 / 来源 / 详情与链接不播报 · 当前播放条目会高亮并自动滚动</div>
+  </div>
+<script>
+  var CUES = [{"i": 0, "start": 0.1, "end": 4.09}, {"i": 1, "start": 4.09, "end": 5.69}, {"i": 2, "start": 5.69, "end": 9.52}, {"i": 4, "start": 9.52, "end": 14.57}, {"i": 6, "start": 14.57, "end": 25.19}, {"i": 8, "start": 25.19, "end": 28.1}, {"i": 10, "start": 28.1, "end": 31.99}, {"i": 12, "start": 31.99, "end": 34.11}, {"i": 13, "start": 34.11, "end": 41.4}, {"i": 15, "start": 41.4, "end": 46.41}, {"i": 17, "start": 46.41, "end": 51.44}, {"i": 19, "start": 51.44, "end": 56.92}, {"i": 21, "start": 56.92, "end": 63.14}, {"i": 23, "start": 63.14, "end": 64.62}, {"i": 24, "start": 64.62, "end": 69.09}, {"i": 26, "start": 69.09, "end": 76.46}, {"i": 28, "start": 76.46, "end": 88.56}, {"i": 30, "start": 88.56, "end": 92.16}, {"i": 32, "start": 92.16, "end": 98.88}, {"i": 34, "start": 98.88, "end": 99.92}, {"i": 35, "start": 99.92, "end": 101.79}, {"i": 36, "start": 101.79, "end": 104.39}, {"i": 37, "start": 104.39, "end": 110.39}, {"i": 39, "start": 110.39, "end": 124.1}, {"i": 41, "start": 124.1, "end": 127.55}, {"i": 43, "start": 127.55, "end": 133.99}, {"i": 45, "start": 133.99, "end": 137.3}, {"i": 47, "start": 137.3, "end": 139.99}, {"i": 48, "start": 139.99, "end": 145.75}, {"i": 50, "start": 145.75, "end": 152.38}, {"i": 52, "start": 152.38, "end": 158.38}, {"i": 54, "start": 158.38, "end": 164.17}, {"i": 56, "start": 164.17, "end": 169.64}, {"i": 58, "start": 169.64, "end": 171.46}, {"i": 59, "start": 171.46, "end": 181.31}, {"i": 61, "start": 181.31, "end": 188.01}, {"i": 62, "start": 188.01, "end": 193.65}, {"i": 63, "start": 193.65, "end": 202.57}, {"i": 64, "start": 202.57, "end": 205.74}, {"i": 65, "start": 205.74, "end": 216.44}, {"i": 66, "start": 216.44, "end": 225.5}, {"i": 67, "start": 225.5, "end": 232.69}, {"i": 68, "start": 232.69, "end": 239.34}];
+  var player = document.getElementById('player');
+  var btn = document.getElementById('playBtn');
+  var rateSel = document.getElementById('rate');
+  var overlay = document.getElementById('overlay');
+  var startBtn = document.getElementById('startBtn');
+  var wakeState = document.getElementById('wakeState');
+  var followBtn = document.getElementById('followBtn');
+  var nodes = document.querySelectorAll('.cue');
+  var useAudio = !!player;
+  var follow = true, lastIdx = -1, wakeLock = null, nosleep = null;
+
+  // ---------- 屏幕常亮 ----------
+  function setState(txt, on) {
+    wakeState.textContent = '屏幕常亮：' + txt;
+    wakeState.className = 'state' + (on ? ' on' : '');
+  }
+  async function keepAwake(on) {
+    if (!on) {
+      if (wakeLock) { try { wakeLock.release(); } catch (e) {} wakeLock = null; }
+      if (nosleep) { try { nosleep.pause(); } catch (e) {} }
+      setState('已关闭', false);
+      return;
+    }
+    // 标准方案：Screen Wake Lock API（Android Chrome / Edge、Safari 16.4+）
+    if ('wakeLock' in navigator) {
+      try {
+        if (!wakeLock) {
+          wakeLock = await navigator.wakeLock.request('screen');
+          wakeLock.addEventListener('release', function () { wakeLock = null; });
+        }
+        setState('已开启', true);
+        return;
+      } catch (e) { /* 落到兜底方案 */ }
+    }
+    // 兜底：iOS 老版本用 1px 静音视频循环阻止锁屏
+    try {
+      if (!nosleep) {
+        var c = document.createElement('canvas'); c.width = c.height = 1;
+        c.getContext('2d').fillRect(0, 0, 1, 1);
+        nosleep = document.createElement('video');
+        nosleep.setAttribute('playsinline', ''); nosleep.muted = true;
+        nosleep.style.cssText = 'position:fixed;width:1px;height:1px;opacity:0;pointer-events:none';
+        nosleep.srcObject = c.captureStream(1);
+        document.body.appendChild(nosleep);
+      }
+      nosleep.play().catch(function () {});
+      setState('已开启(兼容)', true);
+    } catch (e) { setState('浏览器不支持', false); }
+  }
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'visible') {
+      var playing = useAudio ? !player.paused : false;
+      if (playing) keepAwake(true);
+    }
+  });
+
+  // ---------- 文字同步高亮 ----------
+  function highlight() {
+    if (!CUES.length || !useAudio) return;
+    var t = player.currentTime, idx = -1;
+    for (var i = 0; i < CUES.length; i++) {
+      if (t >= CUES[i].start && t < CUES[i].end) { idx = CUES[i].i; break; }
+    }
+    if (idx < 0 && t >= CUES[CUES.length - 1].end) idx = CUES[CUES.length - 1].i;
+    if (idx === lastIdx) return;
+    lastIdx = idx;
+    for (var j = 0; j < nodes.length; j++) {
+      nodes[j].classList.toggle('active', +nodes[j].dataset.i === idx);
+    }
+    if (follow && idx >= 0) {
+      var el = document.querySelector('.cue.active');
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }
+  followBtn.onclick = function () {
+    follow = !follow;
+    followBtn.textContent = '跟随：' + (follow ? '开' : '关');
+    followBtn.className = 'toggle' + (follow ? '' : ' off');
+  };
+
+  if (useAudio) {
+    player.addEventListener('timeupdate', highlight);
+    player.onplay = function () { btn.textContent = '⏸ 暂停'; keepAwake(true); };
+    player.onpause = function () { btn.textContent = '语音版'; keepAwake(false); };
+    player.onended = function () { btn.textContent = '语音版'; keepAwake(false); };
+    btn.onclick = function () { player.paused ? player.play() : player.pause(); };
+    rateSel.onchange = function () { player.playbackRate = parseFloat(rateSel.value); };
+    if (startBtn) startBtn.onclick = function () {
+      player.playbackRate = parseFloat(rateSel.value);
+      try { player.play(); } catch (e) {}
+      overlay.style.display = 'none'; keepAwake(true);
+    };
+    window.addEventListener('load', function () {
+      player.playbackRate = parseFloat(rateSel.value);
+      var p = player.play();
+      if (p && p.catch) p.catch(function () {
+        setTimeout(function () {
+          if (player.paused) overlay.style.display = 'flex';
+          else keepAwake(true);
+        }, 600);
+      });
+      if (!player.paused) keepAwake(true);
+    });
+  } else {
+    // 兜底：浏览器自带朗读（无 mp3 时）
+    var synth = window.speechSynthesis, utter = null, playing = false;
+    function pickVoice() {
+      var vs = synth.getVoices();
+      for (var i = 0; i < vs.length; i++)
+        if (/zh|cmn|Chinese/i.test(vs[i].lang + vs[i].name)) return vs[i];
+      return null;
+    }
+    function start() {
+      var lines = [];
+      for (var i = 0; i < nodes.length; i++) {
+        if (nodes[i].classList.contains('detail')) continue;
+        var clone = nodes[i].cloneNode(true);
+        var s = clone.querySelector('.src'); if (s) s.remove();
+        lines.push(clone.textContent.replace(/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}]/gu, '').trim());
+      }
+      utter = new SpeechSynthesisUtterance(lines.filter(Boolean).join('。'));
+      utter.lang = 'zh-CN'; utter.rate = parseFloat(rateSel.value);
+      var v = pickVoice(); if (v) utter.voice = v;
+      utter.onend = utter.onerror = function () { playing = false; btn.textContent = '语音版'; keepAwake(false); };
+      synth.cancel(); synth.speak(utter);
+      playing = true; btn.textContent = '⏸ 暂停'; keepAwake(true);
+    }
+    btn.onclick = function () {
+      if (!synth) { alert('当前浏览器不支持语音朗读'); return; }
+      if (playing) { synth.pause(); playing = false; btn.textContent = '▶️ 继续'; keepAwake(false); return; }
+      if (synth.paused && utter) { synth.resume(); playing = true; keepAwake(true); return; }
+      start();
+    };
+    if (startBtn) startBtn.onclick = function () { try { start(); } catch (e) {} overlay.style.display = 'none'; };
+    if (synth) synth.onvoiceschanged = pickVoice;
+    window.addEventListener('load', function () {
+      if (synth) { try { start(); } catch (e) {} }
+      setTimeout(function () { if (!playing) overlay.style.display = 'flex'; }, 600);
+    });
+  }
+</script>
+</body>
+</html>
