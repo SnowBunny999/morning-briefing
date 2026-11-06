@@ -2,3 +2,20 @@
 __pycache__/
 *.pyc
 .DS_Store
+
+# 每日生成物（不入库；云端每次运行时重新生成并发布到 Pages）
+briefing.html
+briefing.mp3
+briefing.cues.json
+briefing_today.md
+collected.json
+prices.json
+prices_snippet.md
+push_desp.txt
+translate_cache.json
+run.log
+run_briefing.bat
+MorningBriefing.task.xml
+.wbapp_*.genie
+.workbuddy/
+_site/

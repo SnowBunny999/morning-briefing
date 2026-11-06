@@ -21,6 +21,10 @@ import feedparser
 import requests
 import markdown
 from openai import OpenAI
+from dotenv import load_dotenv
+
+# 读取项目根目录下的 .env（本地 / 计划任务运行时都靠它拿密钥）
+load_dotenv()
 
 CONFIG_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config.yaml")
 
@@ -208,12 +212,21 @@ def summarize(items: list, today: str) -> str:
 # ----------------------------------------------------------
 # 3.5) 输出层：生成带「语音播报」按钮的 HTML 网页
 # ----------------------------------------------------------
-def render_html(markdown_text: str, date_str: str) -> str:
-    """把 Markdown 早报渲染成自包含 HTML，右上角带「🔊 播放」按钮，
-    使用浏览器原生语音合成（speechSynthesis）朗读中文，免费、无需额外密钥。"""
+def render_html(markdown_text: str, date_str: str, audio: bool = False) -> str:
+    """把 Markdown 早报渲染成自包含 HTML。
+
+    - audio=True：嵌入预生成的 briefing.mp3（微软神经网络女声 XiaoxiaoNeural），
+      全设备一致、音质自然；打开页面点一下顶部的「语音版」即播放。
+    - audio=False（兜底）：退回浏览器原生语音合成（speechSynthesis），免费无需密钥。
+    """
     body_html = markdown.markdown(
         markdown_text,
         extensions=["extra", "sane_lists", "nl2br"],
+    )
+    audio_tag = (
+        '<audio id="player" src="briefing.mp3" preload="auto" controls '
+        'style="width:100%;margin-top:14px"></audio>'
+        if audio else ""
     )
     return f"""<!DOCTYPE html>
 <html lang="zh-CN">
@@ -249,9 +262,22 @@ def render_html(markdown_text: str, date_str: str) -> str:
   a {{ color:var(--accent); }}
   .foot {{ color:var(--muted); font-size:13px; text-align:center; margin-top:24px; }}
   code {{ background:#13203a; padding:1px 6px; border-radius:5px; }}
+  .overlay {{ display:none; position:fixed; inset:0; z-index:100;
+             flex-direction:column; align-items:center; justify-content:center; gap:18px;
+             background:rgba(15,20,32,.97); backdrop-filter:blur(6px); text-align:center; padding:24px; }}
+  .overlay h2 {{ border:none; padding:0; color:#e8edf5; font-size:21px; margin:0; }}
+  .overlay button {{ font-size:21px; padding:18px 40px; border:none; border-radius:999px;
+                     background:var(--accent); color:#fff; cursor:pointer; font-weight:700;
+                     box-shadow:0 8px 30px rgba(79,140,255,.45); }}
+  .overlay button:active {{ transform:scale(.97); }}
+  .overlay small {{ color:var(--muted); font-size:13px; }}
 </style>
 </head>
 <body>
+  <div class="overlay" id="overlay">
+    <button id="startBtn">语音版</button>
+    <small>点一下即播 · 可连车载蓝牙</small>
+  </div>
   <div class="bar">
     <select id="rate" title="朗读语速">
       <option value="0.85">0.85x</option>
@@ -259,43 +285,83 @@ def render_html(markdown_text: str, date_str: str) -> str:
       <option value="1.2">1.2x</option>
       <option value="1.4">1.4x</option>
     </select>
-    <button id="playBtn">🔊 播放早报</button>
+    <button id="playBtn">语音版</button>
   </div>
   <div class="wrap">
     <div class="card" id="content">
 {body_html}
     </div>
-    <div class="foot">语音由浏览器自带引擎朗读 · 建议在安静环境或车载蓝牙下收听</div>
+{audio_tag}
+    <div class="foot">语音由微软神经网络女声（XiaoxiaoNeural）朗读 · 建议连接车载蓝牙收听</div>
   </div>
 <script>
-  var synth = window.speechSynthesis;
   var btn = document.getElementById('playBtn');
   var rateSel = document.getElementById('rate');
-  var utter = null, playing = false;
-  function pickVoice() {{
-    var vs = synth.getVoices();
-    for (var i=0;i<vs.length;i++) {{ if (/zh|cmn|Chinese/i.test(vs[i].lang + vs[i].name)) return vs[i]; }}
-    return null;
+  var overlay = document.getElementById('overlay');
+  var startBtn = document.getElementById('startBtn');
+  var player = document.getElementById('player');
+  var useAudio = !!(player && player.src);
+
+  if (useAudio) {{
+    // —— 预生成 MP3 女声模式 ——
+    btn.textContent = '语音版';
+    function syncBtn() {{ btn.textContent = player.paused ? '语音版' : '⏸ 暂停'; }}
+    btn.onclick = function() {{
+      if (player.paused) {{ player.play(); }} else {{ player.pause(); }}
+    }};
+    player.onplay = syncBtn; player.onpause = syncBtn;
+    rateSel.onchange = function() {{ player.playbackRate = parseFloat(rateSel.value); }};
+    if (startBtn) startBtn.onclick = function() {{
+      player.playbackRate = parseFloat(rateSel.value);
+      try {{ player.play(); }} catch(e) {{}}
+      overlay.style.display = 'none';
+    }};
+    window.addEventListener('load', function() {{
+      player.playbackRate = parseFloat(rateSel.value);
+      var p = player.play();
+      if (p && p.catch) {{
+        p.catch(function() {{
+          setTimeout(function() {{ if (player.paused && overlay) overlay.style.display = 'flex'; }}, 600);
+        }});
+      }}
+    }});
+  }} else {{
+    // —— 浏览器朗读兜底模式 ——
+    var synth = window.speechSynthesis;
+    var utter = null, playing = false;
+    function pickVoice() {{
+      var vs = synth.getVoices();
+      for (var i=0;i<vs.length;i++) {{ if (/zh|cmn|Chinese/i.test(vs[i].lang + vs[i].name)) return vs[i]; }}
+      return null;
+    }}
+    function start() {{
+      var text = document.getElementById('content').innerText;
+      utter = new SpeechSynthesisUtterance(text);
+      utter.lang = 'zh-CN'; utter.rate = parseFloat(rateSel.value); utter.pitch = 1.0;
+      var v = pickVoice(); if (v) utter.voice = v;
+      utter.onend = function() {{ playing=false; btn.textContent='语音版'; }};
+      utter.onerror = function() {{ playing=false; btn.textContent='语音版'; }};
+      synth.cancel(); synth.speak(utter);
+      playing = true; btn.textContent='⏸ 暂停';
+    }}
+    btn.onclick = function() {{
+      if (!synth) {{ alert('当前浏览器不支持语音朗读，请用 Chrome / Edge / Safari 打开'); return; }}
+      if (playing) {{ synth.pause(); playing=false; btn.textContent='▶️ 继续'; return; }}
+      if (synth.paused && utter) {{ synth.resume(); playing=true; btn.textContent='⏸ 暂停'; return; }}
+      start();
+    }};
+    function begin() {{
+      if (!synth) {{ overlay.style.display='none'; return; }}
+      try {{ start(); }} catch(e) {{}}
+      overlay.style.display='none';
+    }}
+    if (startBtn) startBtn.onclick = begin;
+    if (synth) synth.onvoiceschanged = function() {{ pickVoice(); }};
+    window.addEventListener('load', function() {{
+      if (synth) {{ try {{ start(); }} catch(e) {{}} }}
+      setTimeout(function() {{ if (!playing && overlay) overlay.style.display='flex'; }}, 600);
+    }});
   }}
-  function start() {{
-    var text = document.getElementById('content').innerText;
-    utter = new SpeechSynthesisUtterance(text);
-    utter.lang = 'zh-CN';
-    utter.rate = parseFloat(rateSel.value);
-    utter.pitch = 1.0;
-    var v = pickVoice(); if (v) utter.voice = v;
-    utter.onend = function() {{ playing=false; btn.textContent='🔊 播放早报'; }};
-    utter.onerror = function() {{ playing=false; btn.textContent='🔊 播放早报'; }};
-    synth.cancel(); synth.speak(utter);
-    playing = true; btn.textContent='⏸ 暂停';
-  }}
-  btn.onclick = function() {{
-    if (!synth) {{ alert('当前浏览器不支持语音朗读，请用 Chrome / Edge / Safari 打开'); return; }}
-    if (playing) {{ synth.pause(); playing=false; btn.textContent='▶️ 继续'; return; }}
-    if (synth.paused && utter) {{ synth.resume(); playing=true; btn.textContent='⏸ 暂停'; return; }}
-    start();
-  }};
-  if (synth) synth.onvoiceschanged = function() {{ pickVoice(); }};
 </script>
 </body>
 </html>
@@ -321,6 +387,30 @@ def push_to_wechat(title: str, content: str) -> dict:
 
 
 # ----------------------------------------------------------
+# 3.7) 兜底：未配 LLM 密钥时，用原始采集条目直接生成网页（便于本地预览效果）
+# ----------------------------------------------------------
+def build_raw_markdown(items: list, today: str) -> str:
+    cn = [i for i in items if i.get("region") == "cn"]
+    gl = [i for i in items if i.get("region") != "cn"]
+    lines = [
+        f"# 📈 财经早报（原始采集 · 未 AI 摘要）· {today}",
+        "",
+        "> 提示：未配置有效 `LLM_API_KEY`，以下是原始采集条目。配置密钥后，"
+        "AI 会把它整理成「今日重点 + 分栏目 + 利好/利空」的结构化早报。",
+        "",
+    ]
+    if gl:
+        lines.append("## 🌍 全球 / 美股")
+        for i in gl:
+            lines.append(f"- **{i['title']}**（{i['source']}）{i['summary']}")
+    if cn:
+        lines.append("## 🇨🇳 国内 / A股 / 政策")
+        for i in cn:
+            lines.append(f"- **{i['title']}**（{i['source']}）{i['summary']}")
+    return "\n".join(lines)
+
+
+# ----------------------------------------------------------
 # 主流程
 # ----------------------------------------------------------
 def main():
@@ -341,7 +431,13 @@ def main():
     all_items.sort(key=lambda x: x.get("age_hours", 9999))
     top = all_items[:max_items]
 
-    markdown = summarize(top, today)
+    llm_key = os.environ.get("LLM_API_KEY", "")
+    if not llm_key or llm_key.startswith("你的"):
+        print("[warn] 未配置有效 LLM_API_KEY，使用原始采集条目生成（未做 AI 摘要）")
+        markdown = build_raw_markdown(top, today)
+    else:
+        markdown = summarize(top, today)
+
     title = f"📈 财经早报 · {today}"
 
     # 1) 总是生成「可语音播放」的 HTML 网页（右上角播放键）
@@ -353,15 +449,17 @@ def main():
     if page_url:
         desp += f"\n\n> 🔊 [点此在手机/电脑浏览器打开语音版（可朗读）]({page_url})"
 
-    if os.environ.get("SERVERCHAN_KEY"):
-        result = push_to_wechat(title, desp)
-        print("推送结果:", result)
-    else:
+    sc_key = os.environ.get("SERVERCHAN_KEY", "")
+    if not sc_key or sc_key.startswith("你的"):
         # 没有配置推送密钥时，把早报打印出来，方便本地调试
+        print("[warn] 未配置 SERVERCHAN_KEY，跳过微信推送（仅生成本地网页 briefing.html）")
         print("\n" + "=" * 60)
         print(title)
         print("=" * 60)
         print(markdown)
+    else:
+        result = push_to_wechat(title, desp)
+        print("推送结果:", result)
 
 
 if __name__ == "__main__":

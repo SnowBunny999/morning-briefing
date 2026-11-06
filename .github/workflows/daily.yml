@@ -1,0 +1,92 @@
+name: Sabrina 财经早报/晚报
+
+# 云端定时（GitHub 服务器执行，与你的电脑开关机无关）
+#   cron 用 UTC：北京 06:30 = UTC 22:30（前一天）-> 早报
+#                北京 22:00 = UTC 14:00           -> 晚报
+# 注意：GitHub 官方文档说明整点前后负载高，定时任务可能延迟数分钟到数十分钟。
+on:
+  schedule:
+    - cron: "30 22 * * *"
+    - cron: "0 14 * * *"
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "morning 或 evening"
+        required: false
+        default: "morning"
+
+# gh-pages 部署需要写权限；若仓库设置里限制为只读，请在
+# Settings -> Actions -> General -> Workflow permissions 选 "Read and write permissions"
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: briefing
+  cancel-in-progress: false
+
+jobs:
+  briefing:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      # 只认 GitHub Secrets，避免误上传的本地 .env 干扰（.env 已被 .gitignore 忽略）
+      - name: 清理本地环境文件
+        run: rm -f .env
+
+      - name: 决定早报/晚报
+        id: mode
+        run: |
+          if [ -n "${{ github.event.inputs.mode }}" ]; then
+            echo "mode=${{ github.event.inputs.mode }}" >> "$GITHUB_OUTPUT"
+          elif [ "${{ github.event.schedule }}" = "30 22 * * *" ]; then
+            echo "mode=morning" >> "$GITHUB_OUTPUT"
+          else
+            echo "mode=evening" >> "$GITHUB_OUTPUT"
+          fi
+
+      # daily_run.py 内部：采集 -> 行情 -> 写稿(译中/带对象标注/摘要+原文链接)
+      #                    -> 推送微信(最优先) -> 女声MP3 + 时间轴 -> 网页
+      - name: 生成早报并推送微信
+        env:
+          SERVERCHAN_KEY: ${{ secrets.SERVERCHAN_KEY }}
+          LISTEN_URL: ${{ secrets.LISTEN_URL }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: python daily_run.py --mode ${{ steps.mode.outputs.mode }}
+
+      - name: 准备语音网页
+        id: site
+        if: always()
+        run: |
+          mkdir -p _site
+          if [ -f briefing.html ]; then
+            cp briefing.html _site/
+            cp briefing.mp3 _site/ 2>/dev/null || true
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "本次未生成网页，跳过 Pages 部署"
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      # 首次运行会创建 gh-pages 分支；之后需在
+      # Settings -> Pages -> Build and deployment -> Source 选 "Deploy from a branch"、分支 gh-pages / root
+      - name: 部署语音网页到 GitHub Pages
+        if: always() && steps.site.outputs.ready == 'true'
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./_site
+          publish_branch: gh-pages
+          force_orphan: true

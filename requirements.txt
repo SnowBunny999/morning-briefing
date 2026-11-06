@@ -4,3 +4,4 @@ requests>=2.31.0
 openai>=1.30.0
 python-dotenv>=1.0.0
 markdown>=3.5.0
+edge-tts>=7.0.0
