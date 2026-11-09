@@ -34,11 +34,11 @@ except Exception:
     cues = []
 
 title = next((b["display"] for b in blocks if b["kind"] == "h1"), "财经早报")
-today = datetime.datetime.now().strftime("%Y-%m-%d")
+today = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=8))).strftime("%Y-%m-%d")
 
 audio_tag = (
-    '<audio id="player" src="briefing.mp3" preload="auto" controls '
-    'style="width:100%;margin:14px 0 4px"></audio>'
+    '<audio id="player" src="briefing.mp3" preload="auto" autoplay playsinline '
+    'webkit-playsinline controls style="width:100%;margin:14px 0 4px"></audio>'
     if use_audio else ""
 )
 
@@ -100,7 +100,7 @@ TPL = r"""<!DOCTYPE html>
 <body>
   <div class="overlay" id="overlay">
     <button id="startBtn">语音版</button>
-    <small>点一下即播 · 播放时屏幕保持常亮</small>
+    <small>打开即播 · 若被浏览器拦住，点屏幕任意处即可 · 播放时屏幕保持常亮</small>
   </div>
   <div class="bar">
     <select id="rate" title="朗读语速">
@@ -116,7 +116,7 @@ TPL = r"""<!DOCTYPE html>
   <div class="wrap">
     <div class="card" id="content">__BODY__</div>
     __AUDIO__
-    <div class="foot">女声朗读 · 图标 / 来源 / 详情与链接不播报 · 当前播放条目会高亮并自动滚动</div>
+    <div class="foot">女声朗读 · 每条概括都会播报 · 来源 / 原文链接不播报 · 当前条目高亮并自动滚动</div>
   </div>
 <script>
   var CUES = __CUES__;
@@ -212,16 +212,42 @@ TPL = r"""<!DOCTYPE html>
       try { player.play(); } catch (e) {}
       overlay.style.display = 'none'; keepAwake(true);
     };
-    window.addEventListener('load', function () {
+    // 打开即播：微信 / iOS 对有声自动播放有系统限制，做三层兜底
+    // ① 直接播 ② 微信 JSBridge 就绪回调里播 ③ 首次触屏/点击任意处播
+    var started = false;
+    function hideOverlay() { overlay.style.display = 'none'; }
+    function tryPlay() {
+      if (started) return;
       player.playbackRate = parseFloat(rateSel.value);
-      var p = player.play();
-      if (p && p.catch) p.catch(function () {
-        setTimeout(function () {
-          if (player.paused) overlay.style.display = 'flex';
-          else keepAwake(true);
-        }, 600);
-      });
-      if (!player.paused) keepAwake(true);
+      var p;
+      try { p = player.play(); } catch (e) { return; }
+      if (p && p.then) {
+        p.then(function () {
+          started = true; hideOverlay(); keepAwake(true);
+          document.removeEventListener('touchstart', onGesture);
+          document.removeEventListener('click', onGesture);
+        }).catch(function () {
+          setTimeout(function () { if (!started) overlay.style.display = 'flex'; }, 600);
+        });
+      } else {
+        started = true; hideOverlay(); keepAwake(true);
+      }
+    }
+    function onGesture() { tryPlay(); }
+    document.addEventListener('touchstart', onGesture, { passive: true });
+    document.addEventListener('click', onGesture, { passive: true });
+    overlay.addEventListener('touchstart', function (e) { e.stopPropagation(); tryPlay(); }, { passive: true });
+    overlay.addEventListener('click', function (e) { e.stopPropagation(); tryPlay(); });
+    window.addEventListener('load', function () {
+      setTimeout(tryPlay, 100);
+      if (typeof WeixinJSBridge !== 'undefined' && WeixinJSBridge.invoke) {
+        WeixinJSBridge.invoke('getNetworkType', {}, function () { tryPlay(); });
+      } else {
+        document.addEventListener('WeixinJSBridgeReady', function () {
+          try { WeixinJSBridge.invoke('getNetworkType', {}, function () { tryPlay(); }); } catch (e) {}
+        });
+      }
+      setTimeout(function () { if (!started && player.paused) overlay.style.display = 'flex'; }, 900);
     });
   } else {
     // 兜底：浏览器自带朗读（无 mp3 时）

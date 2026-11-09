@@ -1,52 +1,77 @@
 # ============================================================
-# 每日财经早报 Agent 配置
-# 只需要改这个文件就能增删信源、调整采集窗口
-# 密钥（API Key 等）不要写在这里，用环境变量 / GitHub Secrets
+# 每日财经早报配置（2026-11-09 按「只收投资相关 + 每条要有完整概括」重配）
+# 改动信源只改这个文件；密钥不要写在这里（用 .env / GitHub Secrets）
 # ============================================================
 
-# 采集窗口：只保留最近 N 小时内的新闻
-# 18 小时大致覆盖「隔夜美股交易时段 + 国内前一工作日收盘后到早上」
-time_window_hours: 18
+# 采集窗口：覆盖隔夜欧美时段 + 国内前一交易日；低频官方源可单独放宽
+time_window_hours: 36
 
-# 喂给 LLM 的最大条目数（控制成本，太多会超 token）
-max_items_for_llm: 60
+# 交给写稿层的最大候选条数（先筛后发，取太多只会拖慢）
+max_items: 140
 
 # 信源列表
-#   region: "global" 国际/全球市场   "cn" 国内/A股/政策
-#   type:   省略=RSS 源；"json"=JSON API 源（需配 items_path 等字段）
-#   单个源失效会被自动跳过，不影响整体
+#   region: global=海外市场 / cn=国内与 A股
+#   type: 省略=RSS；json=JSON API（需 items_path 等字段）
+#   window_hours: 可选，覆盖全局窗口（低频官方源用）
+#   body_field: 可选，完整正文字段；title_from_body: 快讯没有标题时从正文首句取
+#   单个源失效自动跳过，不影响整份早报
 sources:
-  # ---------- 国际 / 全球市场（RSS，从 GitHub 云服务器可稳定访问） ----------
+  # ---------- 国际：市场 / 宏观 / 科技（实测 RSS 可用，正文可抓原文） ----------
   - name: "CNBC Markets"
     region: "global"
+    window_hours: 48
     url: "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000664"
-  - name: "MarketWatch"
+  - name: "CNBC Economy"
     region: "global"
-    url: "http://feeds.marketwatch.com/marketwatch/topstories/"
-  - name: "Investing.com"
+    window_hours: 48
+    url: "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=20910258"
+  - name: "CNBC Tech"
     region: "global"
-    url: "https://www.investing.com/rss/news.rss"
-  - name: "Yahoo Finance"
+    window_hours: 48
+    url: "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=19854910"
+  - name: "MarketWatch MarketPulse"
     region: "global"
-    url: "https://finance.yahoo.com/news/rssindex"
-  - name: "AP Top News"
+    window_hours: 48
+    url: "https://feeds.marketwatch.com/marketwatch/marketpulse/"
+  - name: "MarketWatch Realtime"
     region: "global"
-    url: "https://feeds.apnews.com/rss/apf-topnews"
+    window_hours: 48
+    url: "https://feeds.marketwatch.com/marketwatch/realtimeheadlines/"
+  - name: "Cointelegraph"
+    region: "global"
+    window_hours: 48
+    url: "https://cointelegraph.com/rss"
+  # 美联储官方稿：政策一手源，发稿频率低，单独放宽到 96 小时
+  - name: "美联储"
+    region: "global"
+    url: "https://www.federalreserve.gov/feeds/press_all.xml"
+    window_hours: 96
 
-  # ---------- 国内 / A股 / 政策 ----------
-  # 新浪滚动新闻（JSON API，已验证稳定可用，覆盖国内财经/政策/A股）——国内主源
-  - name: "新浪滚动-财经"
+  # ---------- 国内：华尔街见闻快讯（中文正文完整，实测稳定） ----------
+  - name: "华尔街见闻-全球快讯"
     region: "cn"
     type: "json"
-    url: "https://feed.mix.sina.com.cn/api/roll/get?pageid=153&lid=2516&k=&num=30&order=1"
-    items_path: "result.data"
+    url: "https://api-one.wallstcn.com/apiv1/content/lives?channel=global-channel&client=pc&limit=40"
+    items_path: "data.items"
     title_field: "title"
-    summary_field: "intro"
-    link_field: "url"
-    time_field: "ctime"          # Unix 秒级时间戳
+    summary_field: "content_text"
+    body_field: "content_text"
+    link_field: "uri"
+    time_field: "display_time"
+    title_from_body: true
+  - name: "华尔街见闻-A股快讯"
+    region: "cn"
+    type: "json"
+    url: "https://api-one.wallstcn.com/apiv1/content/lives?channel=a-stock-channel&client=pc&limit=40"
+    items_path: "data.items"
+    title_field: "title"
+    summary_field: "content_text"
+    body_field: "content_text"
+    link_field: "uri"
+    time_field: "display_time"
+    title_from_body: true
 
-  # 长城证券·实时资讯（JSON API，已验证稳定可用；需带 appPlatform/appVerName 头）
-  # 这就是你说的“每日早间要闻”背后的实时资讯流，含标题+正文+北京时间
+  # 券商/机构实时资讯（含正文，作为 A股/个股补充；写稿层限制单源条数防刷屏）
   - name: "长城证券-实时资讯"
     region: "cn"
     type: "json"
@@ -54,58 +79,35 @@ sources:
     items_path: "data"
     title_field: "title"
     summary_field: "content"
+    body_field: "content"
     link_field: "jumpUrl"
     time_field: "time"
-    time_format: "%Y年%m月%d日 %H:%M"   # 北京时间字符串
+    time_format: "%Y年%m月%d日 %H:%M"
     headers:
       appPlatform: "android"
       appVerName: "1.0.0"
       Content-Type: "application/json; charset=utf-8"
 
-  # 金十数据·电报（JSON API，需带 Origin/Referer 头；在 GitHub 上通常可用，沙箱可能被拦）
-  # 验证后保留；若 Actions 日志显示 0 条或报错，告诉我，我按真实返回结构微调字段
-  - name: "金十数据-电报"
-    region: "cn"
-    type: "json"
-    url: "https://flash-api.jin10.com/api/flash/list?channel=-1&v=3"
-    items_path: "data.flash_list"
-    title_field: "content"       # 金十电报没有标题，正文即要点
-    link_field: "url"
-    time_field: "pub_time"       # Unix 时间戳（秒或毫秒均可）
-    headers:
-      Origin: "https://www.jin10.com"
-      Referer: "https://www.jin10.com/"
-      X-Requested-With: "XMLHttpRequest"
-
-  # 财联社·电报（JSON API，低置信度：接口需前端签名+限流，GitHub 上也未必稳定）
-  # 已在代码里做了“列表自动探测 + 标题回退”，能跑就跑，跑不了自动跳过
+  # 财联社电报：用户点名认可，但公开接口有反爬（返回「小财正在加载中」），
+  # 属尽力而为；抓不到时自动跳过，不影响出稿。
   - name: "财联社-电报"
     region: "cn"
     type: "json"
-    url: "https://www.cls.cn/api/v1/telegraph?page=1&rn=10"
+    url: "https://www.cls.cn/api/v1/telegraph?page=1&rn=20"
     items_path: "data"
     title_field: "content"
+    summary_field: "content"
+    body_field: "content"
+    title_from_body: true
     time_field: "time"
-    time_format: "%Y-%m-%d %H:%M:%S"   # 财联社时间是北京时间字符串
+    time_format: "%Y-%m-%d %H:%M:%S"
     headers:
       Referer: "https://www.cls.cn/telegraph"
       X-Requested-With: "XMLHttpRequest"
 
-  # 以下为可选 RSS 源：部分国内站点 RSS 路径可能变动，失效会自动跳过，不影响整体
-  - name: "华尔街见闻"
-    region: "cn"
-    url: "https://wallstreetcn.com/rss/news"
-  - name: "证券时报"
-    region: "cn"
-    url: "http://www.stcn.com/rss/"
-  - name: "财新"
-    region: "cn"
-    url: "https://www.caixin.com/rss/"
-
 # 说明：
-# - 已在本环境实测稳定可用的主源：CNBC、MarketWatch（全球）+ 新浪滚动（国内）。
-# - 金十、财联社为“尽力而为”的可选源：本沙箱被反爬/限流挡住，需在 GitHub 上首次运行验证；
-#   跑不了会自动跳过，不影响你收到早报。若 Actions 日志里它们显示 0 条，把日志发我，我按真实
-#   返回结构微调字段即可。
-# - 长城证券没有干净的每日要闻接口（官网只有旧 PDF 晨报，内容也被同花顺转载）。如果你有具体
-#   的“每日早间要闻”页面地址，发我，我帮你接成 RSS/JSON 源。
+# - 已实测移除：新浪滚动（社会/软新闻多）、Investing / Yahoo（403）、AP（综合时事）、
+#   华尔街见闻 / 证券时报 / 财新 的旧 RSS（404 或返回网页 HTML）、金十（502）。
+# - 写稿层 editorial.py 有硬门槛：只收能挂到 A股/美股/股价/市值/汇率/黄金/利率/
+#   币价/政策/大科技公司财报的新闻；国际时事、教程、营销标题、概念宣传一律剔除。
+# - 每条必须有「不点原文也能读懂」的 2-3 句概括，概括不出来就不入选，不硬凑。

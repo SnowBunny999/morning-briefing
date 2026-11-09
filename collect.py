@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """仅负责采集：调用 briefing.py 的采集层，把原始新闻条目导出为 collected.json。
-写早报（AI 摘要）由 WorkBuddy 在本会话中完成，本脚本不调用任何 LLM。"""
+写稿由 daily_run.py + editorial.py 完成，本脚本不调用任何 LLM。"""
 import json
 import sys
 import yaml
@@ -11,7 +11,7 @@ import briefing  # noqa: E402
 
 cfg = yaml.safe_load(open(briefing.CONFIG_PATH, encoding="utf-8"))
 hours = int(cfg.get("time_window_hours", 18))
-max_items = int(cfg.get("max_items_for_llm", 60))
+max_items = int(cfg.get("max_items", cfg.get("max_items_for_llm", 120)))
 
 all_items = []
 for src in cfg.get("sources", []):

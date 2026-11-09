@@ -2,18 +2,19 @@
 # -*- coding: utf-8 -*-
 """一键流水线：采集 → 行情 → 写稿 → 拼接 → 【推送微信】 → 语音 → 网页 → 日志。
 
-设计要点：
-- 把「推送微信」提到语音/网页之前，且全部逻辑都在本脚本内完成，
-  不依赖 AI 在定时任务里分步调用，杜绝长流程末尾被截断导致漏发。
-- 自动任务只需执行 `python daily_run.py --mode morning` 这一条命令。
-- 全程异常不中断，任何一步失败都继续往下走；推送失败自动重试一次。
-- 每条新闻：主行（标题 + 来源 + 带对象的影响标注）+ 详情行（摘要 + 原文链接）。
-  详情行以 `> ` 开头，网页/微信可见但**不朗读**，开车听不被细节拖长。
+写稿（2026-11-09 版）：
+- 只收能挂到资产上的新闻（A股/美股/股价/市值/汇率/黄金/利率/政策/大科技公司财报），
+  国际时事、教程、营销标题、概念宣传由 editorial.py 硬门槛剔除。
+- 每条先抓原文正文，再从原文抽出 2-3 句组成「不点原文也能读懂整件事」的概括。
+  概括写成普通段落：微信里能读到、语音里也会朗读；来源和原文链接仍放在 `> ` 详情行，
+  不朗读。
+- 全程不依赖任何 LLM / 新密钥；正文抓取与译中失败都会自动降级，绝不阻塞推送。
+- 推送微信排在语音/网页之前，任何后段失败都不影响你收到消息。
 
 用法：
-  python daily_run.py --mode morning             # 早报
-  python daily_run.py --mode evening             # 晚报
-  python daily_run.py --mode morning --skip-push # 演练，不发微信
+  python daily_run.py --mode morning
+  python daily_run.py --mode evening
+  python daily_run.py --mode morning --skip-push --skip-media   # 本地演练
 """
 import argparse
 import datetime
@@ -27,54 +28,34 @@ from pathlib import Path
 
 BASE = Path(__file__).resolve().parent
 LOG = BASE / "run.log"
+BJ = datetime.timezone(datetime.timedelta(hours=8))
 
 POS = ("涨", "升", "超预期", "利好", "增长", "上调", "反弹", "收高", "走高", "创新高",
        "扩大", "回升", "盈利", "获批", "突破", "站上", "获利")
 NEG = ("跌", "降", "不及预期", "利空", "下滑", "下调", "亏损", "收低", "走低", "萎缩",
-       "承压", "警示", "减持", "风险", "下挫", "修正区间", "立案", "索赔")
+       "承压", "警示", "减持", "风险", "下挫", "立案", "索赔")
 
-# 分类关键词（只看标题，避免摘要里的词把新闻塞错栏目）
-OIL_KW = ("原油", "油价", "OPEC", "欧佩克", "伊朗", "中东", "沙特", "天然气", "页岩",
-          "WTI", "布伦特", "产油", "减产", "能源政策", "能源股", "油气")
-MACRO_KW = ("央行", "联储", "美联储", "通胀", "利率", "加息", "降息", "关税", "财政",
-            "选举", "政策", "国债", "GDP", "就业", "PMI", "白宫", "国务院", "证监会",
-            "财政部", "监管", "制裁", "停火", "衰退", "刺激", "弹劾", "中期选举")
-CMD_KW = ("黄金", "金价", "白银", "铜", "大宗", "商品", "原油", "油价", "天然气", "贵金属")
-CAL_KW = ("经济数据", "公布", "会议", "纪要", "日程", "财报", "非农", "CPI", "PMI",
-          "议息", "开盘", "收盘", "预告", "数据出炉")
-
-# 「今日重点」的重要性维度（详见文末说明，属自定义启发式规则，非行业标准）：
-#   ① 影响面：宏观/政策/主要指数 > 行业板块 > 个股公告
-#   ② 时效性：越新越高
-#   ③ 信源：全球主流媒体略加权，并用「同一来源最多 N 条」强制多样性
-BREADTH_MACRO = ("央行", "美联储", "联储", "利率", "加息", "降息", "通胀", "关税",
-                 "选举", "中期选举", "地缘", "伊朗", "中东", "OPEC", "欧佩克", "衰退",
-                 "非农", "CPI", "GDP", "标普", "纳指", "纳斯达克", "道指", "美股",
-                 "白宫", "特朗普", "国务院", "证监会", "财政部", "监管", "制裁",
-                 "停火", "战争", "政策", "美元", "美债", "弹劾")
-BREADTH_SECTOR = ("板块", "行业", "产业链", "原油", "油价", "黄金", "金价", "地产",
-                  "新能源", "半导体", "银行股", "券商", "医药")
-BREADTH_COMPANY = ("回购", "增持", "减持", "增资", "拟向", "涨超", "跌超", "盘中",
-                   "上会", "IPO", "中标", "战略合作", "评级", "耗资", "注销", "万股",
-                   "港元", "奖励股份", "预中标", "公告")
-
-# 影响对象：从具体到宽泛依次匹配，决定「利好黄金 / 利空美股 / 利多油价 …」
 TARGET_RULES = (
     (("黄金", "金价", "贵金属", "白银", "XAU"), "黄金"),
     (("原油", "油价", "OPEC", "欧佩克", "布伦特", "WTI", "产油", "减产", "页岩", "油气"), "油价"),
     (("比特币", "以太坊", "加密货币", "数字货币", "BTC", "ETH"), "币价"),
-    (("美元指数", "美元", "汇率", "人民币", "美债", "国债收益率"), "美元"),
-    (("日经", "日韩", "韩国", "KOSPI", "亚太", "欧洲股市"), "亚太股市"),
-    (("纳斯达克", "标普", "道指", "美股", "华尔街", "三大指数"), "美股"),
+    (("美元指数", "汇率", "人民币", "美债", "国债收益率"), "汇率"),
+    (("日经", "日韩", "KOSPI", "亚太", "欧洲股市"), "亚太股市"),
+    (("纳斯达克", "标普", "道指", "美股", "华尔街"), "美股"),
     (("恒生", "港股", "恒指"), "港股"),
     (("A股", "沪指", "创业板", "上证", "深证", "沪深", "北向", "两市"), "A股"),
     (("央行", "美联储", "联储", "利率", "通胀", "非农", "CPI", "PMI", "GDP",
-      "关税", "制裁", "选举", "衰退", "白宫", "政策"), "全球市场"),
+      "关税", "衰退", "政策"), "全球市场"),
 )
 
 
+def now_bj():
+    """GitHub Actions 服务器是 UTC，统一按北京时间取日期/判断早晚。"""
+    return datetime.datetime.now(BJ)
+
+
 def log(msg):
-    line = f"[{datetime.datetime.now():%Y-%m-%d %H:%M:%S}] {msg}"
+    line = f"[{now_bj():%Y-%m-%d %H:%M:%S}] {msg}"
     print(line, flush=True)
     try:
         with open(LOG, "a", encoding="utf-8") as f:
@@ -92,9 +73,9 @@ def run(script, timeout=180):
         )
         out = (p.stdout or "").strip()
         if out:
-            log(f"  {script}: {out[-300:]}")
+            log(f"  {script}: {out[-400:]}")
         if p.returncode != 0:
-            log(f"  {script} 退出码={p.returncode} stderr={(p.stderr or '')[-200:]}")
+            log(f"  {script} 退出码={p.returncode} stderr={(p.stderr or '')[-240:]}")
         return p.returncode == 0
     except subprocess.TimeoutExpired:
         log(f"  {script} 超时({timeout}s)，跳过")
@@ -104,26 +85,23 @@ def run(script, timeout=180):
         return False
 
 
-def clean(text, limit=95):
+def clean(text, limit=120):
     text = re.sub(r"\s+", " ", (text or "").strip())
     text = re.sub(r"[\[\]{}<>|`]", "", text)
     return text[:limit]
 
 
-def clean_summary(s, limit=160):
-    """把源里的摘要洗成 1-2 句可读文字。"""
+def clean_summary(s, limit=260):
     s = re.sub(r"<[^>]*>", "", s or "")
     s = re.sub(r"&[a-zA-Z#0-9]+;", " ", s)
     s = re.sub(r"\s+", " ", s).strip()
-    s = re.sub(r"[<＜]\s*[.．…]{1,3}\s*$", "", s)   # 源自带的 "<..." 截断符
-    s = re.sub(r"[.．…]{2,}\s*$", "", s)             # 尾部省略号
+    s = re.sub(r"[<＜]\s*[.．…]{1,3}\s*$", "", s)
+    s = re.sub(r"[.．…]{2,}\s*$", "", s)
     s = re.sub(r"^(人民财讯|财联社|新浪财经|证券时报)\s*\d{1,2}月\d{1,2}日电[，,]?\s*", "", s)
-    s = s.strip(" 。，,；;·")
-    return s[:limit]
+    return s.strip(" 。，,；;·")[:limit]
 
 
 def extract_link(raw):
-    """提取原文链接。长城证券把 URL 包在 JSON 字符串里，其余源是裸 URL。"""
     s = str(raw or "").strip()
     if not s:
         return ""
@@ -155,20 +133,20 @@ def extract_link(raw):
 
 
 def safe_url(u):
-    """避免 URL 里的括号破坏 markdown 链接语法。"""
     return (u or "").replace("(", "%28").replace(")", "%29").replace(" ", "%20")
 
 
 def direction(text):
-    if any(k in text for k in NEG):
+    # 「涨跌互现 / 冲高回落 / 震荡」不是方向信号，先剔除再判断，避免误标利空
+    t = re.sub(r"(涨跌互现|涨跌不一|有涨有跌|震荡|波动|冲高回落|高位回落|互现)", "", text or "")
+    if any(k in t for k in NEG):
         return "利空"
-    if any(k in text for k in POS):
+    if any(k in t for k in POS):
         return "利好"
     return "中性"
 
 
 def target_of(it, blob=None, force=None):
-    """先看标题（最准），标题没命中再看摘要，避免摘要里顺带提到的市场抢走标注对象。"""
     if force:
         return force
     title = it.get("title", "")
@@ -181,45 +159,21 @@ def target_of(it, blob=None, force=None):
 
 
 def impact(it, force_target=None):
-    """带对象的影响标注：利好黄金 / 利空美股 / 利多油价 / 中性。"""
-    blob = it.get("title", "") + " " + it.get("summary", "")
-    d = direction(blob)
+    # 只看标题判断方向，避免概括里顺带提到的「承压」乱带节奏
+    d = direction(it.get("title", ""))
     if d == "中性":
         return "中性"
-    tgt = target_of(it, blob, force_target)
+    tgt = target_of(it, it.get("title", ""), force_target)
     if tgt == "油价":
-        return ("利多油价" if d == "利好" else "利空油价")
+        return "利多油价" if d == "利好" else "利空油价"
     return f"{d}{tgt}"
 
 
-def detail_line(it, with_summary=True):
-    """生成不朗读的详情行：摘要 + 原文链接。"""
-    parts = []
-    title = clean(it.get("title", ""))
-    if with_summary:
-        s = clean_summary(it.get("summary", ""), 160)
-        # 摘要基本等于标题时不重复
-        if s and s not in title and len(s.replace(title[:10], "")) > 18:
-            parts.append(s)
-    url = safe_url(extract_link(it.get("link", "")))
-    if url:
-        parts.append(f"[原文]({url})")
-    return ("> " + "  ".join(parts)) if parts else ""
-
-
 def build_briefing(mode):
-    """规则化写稿：不依赖任何 LLM，保证无人值守也能出稿。
-    若已存在「当天 + 对应早报/晚报」的稿件，则直接复用，不覆盖。"""
-    today = datetime.datetime.now().strftime("%Y-%m-%d")
+    """结构化写稿：译中 → 相关性硬门槛 → 抓正文 → 完整概括 → 分栏目成稿。"""
+    today = now_bj().strftime("%Y-%m-%d")
     label = "财经早报" if mode == "morning" else "财经晚报"
     md_path = BASE / "briefing_today.md"
-
-    if md_path.exists():
-        old = md_path.read_text(encoding="utf-8")
-        first = old.splitlines()[0] if old.splitlines() else ""
-        if today in first and label in first:
-            log(f"  复用已存在的当天{label}稿件，不覆盖")
-            return
 
     items = []
     cp = BASE / "collected.json"
@@ -228,120 +182,82 @@ def build_briefing(mode):
             items = json.loads(cp.read_text(encoding="utf-8"))
         except Exception as e:
             log(f"  读取 collected.json 失败: {e}")
+    if not isinstance(items, list):
+        items = []
 
-    # 先把每条的摘要标准化，再连同标题一起批量译中（免费接口、带缓存）
     for it in items:
-        it["summary"] = clean_summary(it.get("summary", ""), 200)
+        it["title"] = clean(it.get("title", ""), 120)
+        it["summary"] = clean_summary(it.get("summary", ""), 260)
+
+    # 英文标题必须先译中，否则中文资产词表无法判断相关性
+    import translate
     try:
-        import translate
-        texts = []
-        for it in items:
-            texts += [it.get("title", ""), it.get("summary", "")]
-        cmap = translate.translate_many(list(dict.fromkeys(t for t in texts if t)))
+        titles = list(dict.fromkeys(x["title"] for x in items if x.get("title")))
+        cmap = translate.translate_many(titles, limit=160)
         n_tr = 0
         for it in items:
-            for field in ("title", "summary"):
-                orig = it.get(field, "")
-                if orig and cmap.get(orig) and cmap[orig] != orig:
-                    it[field] = cmap[orig]
-                    n_tr += 1
-        log(f"  英文标题/摘要译中：{n_tr} 处")
+            t = it.get("title", "")
+            if cmap.get(t) and cmap[t] != t:
+                it["title"] = cmap[t]
+                n_tr += 1
+        log(f"  英文标题译中：{n_tr} 处")
     except Exception as e:
-        log(f"  翻译跳过：{e}")
+        log(f"  标题译中跳过：{e}")
 
-    # 去重（标题前 14 字）
-    seen, uniq = set(), []
-    for it in items:
-        t = clean(it.get("title", ""))
-        key = t[:14]
-        if not t or key in seen:
-            continue
-        seen.add(key)
-        uniq.append(it)
+    def tr_many(texts):
+        try:
+            return translate.translate_many(texts, limit=140)
+        except Exception as e:
+            log(f"  正文译中跳过：{e}")
+            return {}
 
-    def line(it, force_target=None):
-        t = clean(it.get("title", ""))
-        src = clean(it.get("source", ""), 24)
-        main = f"- {t}（来源：{src}）。{impact(it, force_target)}"
-        detail = detail_line(it, with_summary=True)
-        return [x for x in (main, detail) if x]
-
-    # 每条新闻只归入「最匹配的一个」栏目，避免重复刷屏
-    buckets = {k: [] for k in ("global", "macro", "cmd", "oil", "cn", "cal")}
-    for it in uniq:
-        t = clean(it.get("title", ""))       # 分类只看标题
-        blob = t + " " + clean(it.get("summary", ""), 80)
-        if any(k in t for k in OIL_KW):
-            buckets["oil"].append(line(it, force_target="油价"))
-        elif any(k in t for k in MACRO_KW):
-            buckets["macro"].append(line(it))
-        elif any(k in t for k in CMD_KW):
-            buckets["cmd"].append(line(it))
-        elif any(k in t for k in CAL_KW) and len(buckets["cal"]) < 4:
-            buckets["cal"].append(line(it))
-        elif it.get("region") == "global":
-            buckets["global"].append(line(it))
-        else:
-            buckets["cn"].append(line(it))
-
-    # 今日重点：影响面 × 时效 × 信源多样性
-    def score(it):
-        blob = it.get("title", "") + " " + it.get("summary", "")
-        v = 0
-        if any(k in blob for k in BREADTH_MACRO):
-            v += 6
-        elif any(k in blob for k in BREADTH_SECTOR):
-            v += 3
-        if any(k in blob for k in BREADTH_COMPANY):
-            v -= 5
-        if it.get("region") == "global":
-            v += 3
-        age = float(it.get("age_hours") or 24)
-        v += max(0.0, 3.0 - age / 6.0)
-        return v
-
-    ranked = sorted(uniq, key=score, reverse=True)
-    focus, used_src, n_global = [], {}, 0
-    for it in ranked:
-        src = it.get("source", "")
-        is_global = it.get("region") == "global"
-        cap = 2 if is_global else 1
-        if used_src.get(src, 0) >= cap or (is_global and n_global >= 3):
-            continue
-        focus.append(it)
-        used_src[src] = used_src.get(src, 0) + 1
-        n_global += 1 if is_global else 0
-        if len(focus) >= 5:
-            break
-
-    focus_lines = []
-    for x in focus:
-        focus_lines.append(
-            f"- {clean(x.get('title',''))}（来源：{clean(x.get('source',''),24)}）。{impact(x)}"
+    try:
+        import article
+        import editorial
+        focus, rest, stats = editorial.select(
+            items, log=log, translate_fn=tr_many, enrich_fn=article.enrich
         )
-        d = detail_line(x, with_summary=False)
-        if d:
-            focus_lines.append(d)
+    except Exception:
+        log("  写稿异常: " + traceback.format_exc()[-500:])
+        focus, rest, stats = [], [], {"picked": 0}
+
+    def render_event(ev):
+        src = clean("/".join(ev["sources"][:2]), 40)
+        ctx = dict(ev["raw"])
+        ctx["title"] = ev["title"]
+        lines = [f"- {ev['title']}（来源：{src}）。{impact(ctx)}"]
+        # 概括是普通段落：微信里能读到，语音里也会朗读
+        lines += [p for p in ev["para"] if p]
+        links = [f"[原文{i + 1}]({safe_url(extract_link(u))})"
+                 for i, u in enumerate(ev["links"][:2]) if extract_link(u)]
+        if links:
+            lines.append("> " + " · ".join(links))
+        return lines
 
     out = [f"# 📈 {label} · {today}", "", "## 今日重点", ""]
-    out += focus_lines or ["- 今日暂无重点快讯"]
-    sections = [
-        ("## 🌍 全球股市与美股", "global"),
-        ("## 🏛 宏观与政策", "macro"),
-        ("## 🛢 大宗商品", "cmd"),
-        ("## 🛢 原油与能源", "oil"),
-        ("## 🇨🇳 国内财经与 A股前瞻", "cn"),
-        ("## 📅 今日重要数据/事件", "cal"),
-    ]
-    for title, key in sections:
-        out += ["", title, ""]
-        pairs = buckets[key][:5]
-        flat = [ln for pair in pairs for ln in pair]
-        out += flat or ["- 今日无重大相关消息"]
+    for ev in focus:
+        out += render_event(ev) + [""]
+    if not focus:
+        out += ["- 今日暂无符合投资相关标准的重点消息", ""]
 
-    md_path.write_text("\n".join(out) + "\n", encoding="utf-8")
-    n_detail = sum(1 for x in out if x.startswith("> "))
-    log(f"  规则化生成{label}：{len(uniq)} 条（去重后），{n_detail} 条带摘要/原文链接")
+    groups = {}
+    for ev in rest:
+        groups.setdefault(ev["section"], []).append(ev)
+    for key in editorial.SECTION_ORDER:
+        evs = groups.get(key, [])
+        if not evs:
+            continue
+        out += ["", editorial.SECTION_TITLE[key], ""]
+        for ev in evs[:5]:
+            out += render_event(ev) + [""]
+
+    md_path.write_text("\n".join(out).rstrip() + "\n", encoding="utf-8")
+    n_para = sum(len(ev["para"]) for ev in focus + rest)
+    avg = (sum(len("".join(ev["para"])) for ev in focus + rest)
+           / max(1, len(focus) + len(rest)))
+    log(f"  结构化生成{label}：采用 {stats.get('picked', 0)} 条（重点 {len(focus)}），"
+        f"概括 {n_para} 句 / 平均 {avg:.0f} 字；剔除 {stats.get('offtopic', 0)} 条非投资类、"
+        f"{stats.get('no_para', 0)} 条概括不足")
 
 
 def main():
@@ -350,17 +266,17 @@ def main():
     ap.add_argument("--skip-push", action="store_true")
     ap.add_argument("--skip-media", action="store_true")
     args = ap.parse_args()
-    mode = args.mode or ("morning" if datetime.datetime.now().hour < 12 else "evening")
+    mode = args.mode or ("morning" if now_bj().hour < 12 else "evening")
 
     log(f"===== 开始 {mode} 流水线 =====")
     os.chdir(BASE)
 
-    run("collect.py", timeout=240)
+    run("collect.py", timeout=300)
     run("fetch_prices.py", timeout=240)
     try:
         build_briefing(mode)
     except Exception:
-        log("  写稿异常: " + traceback.format_exc()[-400:])
+        log("  写稿异常: " + traceback.format_exc()[-500:])
     run("assemble.py", timeout=60)
 
     # —— 推送优先：微信必须最先送达，后面语音/网页即使全断也不影响 ——
@@ -375,7 +291,7 @@ def main():
         log(f"  >>> 推送结果: {'成功(PUSH_OK)' if push_ok else '失败'} <<<")
 
     if not args.skip_media:
-        run("generate_audio.py", timeout=240)
+        run("generate_audio.py", timeout=300)
         run("render_briefing.py", timeout=60)
 
     prices_ok = []
@@ -390,7 +306,7 @@ def main():
     except Exception:
         pass
 
-    log(f"===== 结束 {mode} | 新闻 {n_news} 条 | 行情成功 {len(prices_ok)}/7 "
+    log(f"===== 结束 {mode} | 采集 {n_news} 条 | 行情成功 {len(prices_ok)}/7 "
         f"({','.join(prices_ok) or '无'}) | 推送 {push_ok} =====")
     if push_ok is False:
         sys.exit(1)
