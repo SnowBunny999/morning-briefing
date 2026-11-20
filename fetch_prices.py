@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""获取美股指数、黄金与主流数字货币行情，输出 prices.json（原始数据）与 prices_snippet.md（已排好版的早报片段）。
+"""获取美股指数、美元指数、黄金、原油与主流数字货币行情，输出 prices.json（原始数据）与 prices_snippet.md（已排好版的早报片段）。
 特点：
 - 免费、无需任何 API 密钥；
 - 多源容错（指数：Yahoo 主、stockanalysis 备；币价：OKX/Binance/MEXC/火币/Gate 依次；金价：gold-api/goldprice）；
+- 美元指数 DXY 复用同一个 Yahoo chart 接口（DX-Y.NYB = ICE US Dollar Index）；
 - 即使某项全部源失败也会写出「获取失败，跳过」的说明，绝不阻塞流水线。
 """
 import json
@@ -30,7 +31,7 @@ def get_text(url, timeout=12):
         return r.read().decode("utf-8", errors="ignore")
 
 
-result = {"spx": None, "ixic": None, "gold": None, "btc": None,
+result = {"spx": None, "ixic": None, "dxy": None, "gold": None, "btc": None,
           "eth": None, "oil_wti": None, "oil_brent": None,
           "usdcny": None, "errors": []}
 
@@ -87,6 +88,14 @@ for key, srcs in IDX_SRCS.items():
         result["errors"].append("idx " + key + ": 全部源失败")
     else:
         result[key] = {"value": val, "chg_pct": chg}
+
+
+# ---------- 美元指数 DXY（ICE，复用上面的 Yahoo chart 接口） ----------
+try:
+    val, chg = _yahoo_idx("DX-Y.NYB")
+    result["dxy"] = {"value": val, "chg_pct": chg}
+except Exception as e:
+    result["errors"].append("dxy: " + str(e)[:80])
 
 
 # ---------- 黄金 XAU/USD ----------
@@ -180,7 +189,7 @@ with open("prices.json", "w", encoding="utf-8") as f:
     json.dump(result, f, ensure_ascii=False, indent=2)
 
 # ---------- 生成 markdown 片段 ----------
-lines = ["## 💰 行情：美股指数 / 黄金 / 数字货币 / 原油", ""]
+lines = ["## 💰 行情：美股指数 / 美元指数 / 黄金 / 数字货币 / 原油", ""]
 usdcny = result.get("usdcny")
 
 
@@ -196,6 +205,13 @@ def fmt_pct(c):
     return "0.00%" if c is None else f"{c:+.2f}%"
 
 
+def dxy_tag(c):
+    """美元指数只描述强弱，不套用「利好/利空xx」，避免替读者下判断。"""
+    if c is None or abs(c) < 0.005:
+        return "中性"
+    return "美元走强" if c >= 0 else "美元走弱"
+
+
 # 美股指数
 for label, key in (("标普500", "spx"), ("纳斯达克", "ixic")):
     d = result.get(key)
@@ -203,6 +219,13 @@ for label, key in (("标普500", "spx"), ("纳斯达克", "ixic")):
         lines.append(f"- 📊 **{label}**：{d['value']:,.2f}，{fmt_pct(d['chg_pct'])}　*{dir_tag(d['chg_pct'], '美股')}*")
     else:
         lines.append(f"- 📊 **{label}**：行情获取失败，今日跳过")
+
+# 美元指数
+dxy = result.get("dxy")
+if dxy:
+    lines.append(f"- 💵 **美元指数 DXY**：{dxy['value']:,.2f}，{fmt_pct(dxy['chg_pct'])}　*{dxy_tag(dxy['chg_pct'])}*")
+else:
+    lines.append("- 💵 **美元指数 DXY**：行情获取失败，今日跳过")
 
 # 黄金
 g = result.get("gold")

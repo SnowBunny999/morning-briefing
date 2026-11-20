@@ -297,7 +297,8 @@ def main():
     prices_ok = []
     try:
         p = json.loads((BASE / "prices.json").read_text(encoding="utf-8"))
-        prices_ok = [k for k in ("spx", "ixic", "gold", "btc", "eth", "oil_wti", "oil_brent") if p.get(k)]
+        prices_ok = [k for k in ("spx", "ixic", "dxy", "gold", "btc-usdt", "eth-usdt",
+                                 "oil_wti", "oil_brent") if p.get(k)]
     except Exception:
         pass
     n_news = 0
@@ -306,7 +307,7 @@ def main():
     except Exception:
         pass
 
-    log(f"===== 结束 {mode} | 采集 {n_news} 条 | 行情成功 {len(prices_ok)}/7 "
+    log(f"===== 结束 {mode} | 采集 {n_news} 条 | 行情成功 {len(prices_ok)}/8 "
         f"({','.join(prices_ok) or '无'}) | 推送 {push_ok} =====")
     if push_ok is False:
         sys.exit(1)
