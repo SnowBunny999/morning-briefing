@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>📈 财经晚报 · 2026-11-28</title>
+<style>
+  :root { --bg:#0f1420; --card:#1a2233; --fg:#e8edf5; --muted:#9aa7bd; --accent:#4f8cff; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg);
+         font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;
+         line-height:1.75; padding:60px 14px 90px; -webkit-text-size-adjust:100%; }
+  .bar { position:fixed; top:0; left:0; right:0; z-index:50;
+         display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+         padding:9px 12px calc(9px + env(safe-area-inset-top,0px));
+         background:rgba(15,20,32,.95); backdrop-filter:blur(8px);
+         border-bottom:1px solid #2a3450; }
+  .bar button { font-size:15px; padding:9px 16px; border:none; border-radius:999px;
+                background:var(--accent); color:#fff; cursor:pointer; font-weight:600; }
+  .bar button:active { transform:scale(.96); }
+  .bar select { font-size:14px; padding:7px 8px; border-radius:8px;
+                border:1px solid #2a3450; background:#13203a; color:var(--fg); }
+  .bar .state { font-size:12px; color:var(--muted); margin-left:auto; white-space:nowrap; }
+  .bar .state.on { color:#6ee7a8; }
+  .bar .toggle { font-size:12px; padding:6px 10px; background:#243354; }
+  .bar .toggle.off { background:#3a3a44; color:var(--muted); }
+  .wrap { max-width:760px; margin:0 auto; }
+  .card { background:var(--card); border:1px solid #2a3450; border-radius:14px;
+          padding:16px 18px; }
+  .cue { border-radius:8px; padding:3px 9px; margin:2px -9px;
+         transition:background .25s, box-shadow .25s, color .25s; }
+  .cue.h1 { font-size:23px; font-weight:700; margin:2px 0 10px; }
+  .cue.h2 { font-size:18px; font-weight:700; color:#cfe0ff; margin:20px 0 7px;
+            border-left:4px solid var(--accent); border-radius:0 8px 8px 0; padding:4px 10px; }
+  .cue.li { position:relative; padding-left:22px; }
+  .cue.li:before { content:"•"; position:absolute; left:9px; color:var(--accent); }
+  .cue.quote { color:var(--muted); background:#13203a; border-left:4px solid #4f8cff; }
+  .cue.detail { color:var(--muted); font-size:.86em; line-height:1.6;
+                background:#13203a; border-left:2px solid #33456b; border-radius:0 6px 6px 0;
+                padding:5px 10px; margin:2px 0 9px 22px; }
+  .cue.detail a { color:#8ab4ff; text-decoration:none; border-bottom:1px dotted #8ab4ff; }
+  .cue.active { background:rgba(79,140,255,.22); box-shadow:inset 3px 0 0 var(--accent);
+                color:#fff; }
+  .src { color:var(--muted); font-size:.8em; opacity:.72; font-weight:400; }
+  .foot { color:var(--muted); font-size:12px; text-align:center; margin-top:18px; }
+  .overlay { display:none; position:fixed; inset:0; z-index:100;
+             flex-direction:column; align-items:center; justify-content:center; gap:16px;
+             background:rgba(15,20,32,.97); text-align:center; padding:24px; }
+  .overlay button { font-size:22px; padding:20px 46px; border:none; border-radius:999px;
+                    background:var(--accent); color:#fff; cursor:pointer; font-weight:700;
+                    box-shadow:0 8px 30px rgba(79,140,255,.45); }
+  .overlay small { color:var(--muted); font-size:13px; }
+  a { color:var(--accent); }
+</style>
+</head>
+<body>
+  <div class="overlay" id="overlay">
+    <button id="startBtn">语音版</button>
+    <small>打开即播 · 若被浏览器拦住，点屏幕任意处即可 · 播放时屏幕保持常亮</small>
+  </div>
+  <div class="bar">
+    <select id="rate" title="朗读语速">
+      <option value="0.85">0.85x</option>
+      <option value="1" selected>1.0x</option>
+      <option value="1.2">1.2x</option>
+      <option value="1.4">1.4x</option>
+    </select>
+    <button id="playBtn">语音版</button>
+    <button id="followBtn" class="toggle" title="文字跟随朗读滚动">跟随：开</button>
+    <span class="state" id="wakeState">屏幕常亮：待播放</span>
+  </div>
+  <div class="wrap">
+    <div class="card" id="content"><h1 class="cue h1" data-i="0">📈 财经晚报 · 2026-11-28</h1>
+<h2 class="cue h2" data-i="1">💰 行情：美股指数 / 美元指数 / 黄金 / 数字货币 / 原油</h2>
+<div class="cue li" data-i="2">📊 <b>标普500</b>：7,297.49，+1.60%　<i>利好美股</i></div>
+<div class="cue li" data-i="3">📊 <b>纳斯达克</b>：24,129.50，+2.31%　<i>利好美股</i></div>
+<div class="cue li" data-i="4">💵 <b>美元指数 DXY</b>：104.01，+0.00%　<i>中性</i></div>
+<div class="cue li" data-i="5">🥇 <b>黄金 XAU/USD</b>：3,650 美元/盎司（≈ 781 元/克），+0.00%　<i>中性</i></div>
+<div class="cue li" data-i="6">₿ <b>比特币 BTC</b>：59,301 美元（≈ 394,612 元），-1.85%　<i>利空币价</i></div>
+<div class="cue li" data-i="7">⟠ <b>以太坊 ETH</b>：1,647 美元（≈ 10,960 元），-2.57%　<i>利空币价</i></div>
+<div class="cue li" data-i="8">🛢 <b>WTI 原油</b>：83.08 美元/桶，-0.72%　<i>利空油价</i></div>
+<div class="cue li" data-i="9">🛢 <b>布伦特原油</b>：90.84 美元/桶，+0.22%　<i>利多油价</i></div>
+<h2 class="cue h2" data-i="10">今日重点</h2>
+<div class="cue li" data-i="11">矿业巨头，下周解禁居首<span class="src">（来源：长城证券-实时资讯）</span>。中性</div>
+<div class="cue p" data-i="12">下周A股解禁市值逾430亿元</div>
+<div class="cue p" data-i="13">据证券时报·数据宝统计，下周（11月30日至12月4日），A股将有32家上市公司迎来限售股解禁</div>
+<div class="cue p" data-i="14">以最新价计算，32家上市公司解禁股对应市值合</div>
+<div class="cue li" data-i="15">随着新的“投降”信号出现，比特币供应指标创11年来新低<span class="src">（来源：Cointelegraph）</span>。利空币价</div>
+<div class="cue p" data-i="16">11月21日，BTC/USD跌至55，081美元，创下本月迄今为止28.8%的最大跌幅。“从历史上看</div>
+<div class="cue detail" data-i="16"><a href="https://cointelegraph.com/markets/bitcoin-supply-metric-new-capitulation-signal?utm_source=rss_feed&amp;utm_medium=rss&amp;utm_campaign=rss_partner_inbound" target="_blank" rel="noopener">原文1</a></div>
+<div class="cue li" data-i="18">美联储鹰派立场可能导致12月“崩盘”，加密货币市场备受关注<span class="src">（来源：Cointelegraph）</span>。中性</div>
+<div class="cue p" data-i="19">11月28日，即联邦公开市场委员会（FOMC）12月8日至9日会议前的第二个星期六</div>
+<div class="cue p" data-i="20">自9月中旬以来，该指数一直保持在100以上</div>
+<div class="cue detail" data-i="20"><a href="https://cointelegraph.com/markets/crypto-hawkish-fed-risks-december-meltdown?utm_source=rss_feed&amp;utm_medium=rss&amp;utm_campaign=rss_partner_inbound" target="_blank" rel="noopener">原文1</a></div>
+<h2 class="cue h2" data-i="22">🌍 美股与全球市场</h2>
+<div class="cue li" data-i="23">在科技股上涨以及马斯克表示将扩大对特朗普账户的股份捐赠之后，SpaceX的股价飙升逾4%<span class="src">（来源：CNBC Tech）</span>。利好海外市场</div>
+<div class="cue p" data-i="24">周五的缩短交易时段中，SpaceX的股价上涨了4.83%，这得益于纳斯达克整体上涨以及首席执行官埃隆·马斯克扩大其SpaceX股票捐赠计划</div>
+<div class="cue p" data-i="25">周三感恩节前夕，股价收涨1.30%</div>
+<div class="cue detail" data-i="25"><a href="https://www.cnbc.com/2026/11/27/spacex-shares-musk-donations.html" target="_blank" rel="noopener">原文1</a></div>
+<h2 class="cue h2" data-i="27">🏛 央行 / 政策 / 宏观数据</h2>
+<div class="cue li" data-i="28">监管机构宣布了适用“贷款真实性”和消费者租赁规则的消费者信贷美元门槛<span class="src">（来源：美联储）</span>。中性</div>
+<div class="cue p" data-i="29">美国政府官方网站 定于下午3:00发布</div>
+<div class="cue p" data-i="30">具体而言，根据截至 2026 年 6 月 1 日 CPI-W 的 3.9% 年度百分比涨幅</div>
+<div class="cue detail" data-i="30"><a href="https://www.federalreserve.gov/newsevents/pressreleases/bcreg20261125b.htm" target="_blank" rel="noopener">原文1</a></div>
+<div class="cue li" data-i="32">监管机构宣布了小额贷款免于高价抵押贷款评估要求的美元门槛值<span class="src">（来源：美联储）</span>。中性</div>
+<div class="cue p" data-i="33">美国政府官方网站 定于下午3:00发布</div>
+<div class="cue p" data-i="34">该门槛金额将于 2027 年 1 月 1 日生效，并基于城市消费价格指数 3.9% 的年度百分比涨幅</div>
+<div class="cue detail" data-i="34"><a href="https://www.federalreserve.gov/newsevents/pressreleases/bcreg20261125a.htm" target="_blank" rel="noopener">原文1</a></div>
+<h2 class="cue h2" data-i="36">🥇 黄金 · 数字货币 · 大宗商品</h2>
+<div class="cue li" data-i="37">奥地利监管的加密货币公司上半年交易额达204亿欧元<span class="src">（来源：Cointelegraph）</span>。中性</div>
+<div class="cue p" data-i="38">这些平台上约74%的用户账户位于其他欧洲经济区（EEA）国家</div>
+<div class="cue p" data-i="39">2025年12月，欧盟委员会提议将关键市场基础设施（包括CASP）的“直接监管权限”移交</div>
+<div class="cue detail" data-i="39"><a href="https://cointelegraph.com/news/austria-supervised-crypto-firms-report-204b-h1-volume?utm_source=rss_feed&amp;utm_medium=rss&amp;utm_campaign=rss_partner_inbound" target="_blank" rel="noopener">原文1</a></div>
+<div class="cue li" data-i="41">东盟+3就探索加密货币支付合作的倡议达成一致<span class="src">（来源：Cointelegraph）</span>。中性</div>
+<div class="cue p" data-i="42">在2026年马尼拉东盟科技峰会的一次炉边谈话中，赵先生支持了菲律宾金融科技联盟创始主席Lito Villanueva提出的一个想法</div>
+<div class="cue detail" data-i="42"><a href="https://cointelegraph.com/news/asean3-agrees-on-initiative-to-explore-crypto-payments-cooperation?utm_source=rss_feed&amp;utm_medium=rss&amp;utm_campaign=rss_partner_inbound" target="_blank" rel="noopener">原文1</a></div>
+<div class="cue li" data-i="44">富兰克林邓普顿在加密货币指数ETF中为HYPE留出空间<span class="src">（来源：Cointelegraph）</span>。中性</div>
+<div class="cue p" data-i="45">此次新增之际，跟踪Hyperliquid原生代币的美国现货投资产品的管理资产规模已达到2.665亿美元</div>
+<div class="cue p" data-i="46">自5月以来，美国已推出三只跟踪HYPE的现货交易所交易产品（ETP），分别由资产管理公司21Shares、Bitwise和Grayscale发行</div>
+<div class="cue detail" data-i="46"><a href="https://cointelegraph.com/news/franklin-templeton-hype-crypto-index-etf?utm_source=rss_feed&amp;utm_medium=rss&amp;utm_campaign=rss_partner_inbound" target="_blank" rel="noopener">原文1</a></div>
+<h2 class="cue h2" data-i="48">🇨🇳 A股与国内财经</h2>
+<div class="cue li" data-i="49">“已做好应对任何风暴的准备”：阿联酋部长对经济持乐观态度，国际货币基金组织上调经济预测<span class="src">（来源：CNBC Economy）</span>。利好海外市场</div>
+<div class="cue p" data-i="50">国际货币基金组织（IMF）上周将阿联酋2026年的实际GDP预测从一个月前预测的萎缩3.9%上调至增长0.2%</div>
+<div class="cue detail" data-i="50"><a href="https://www.cnbc.com/2026/11/25/uae-iran-war-economy-oil.html" target="_blank" rel="noopener">原文1</a></div>
+<div class="cue li" data-i="52">研究机构预测存储价格明年或下行 手机厂商下调出货目标<span class="src">（来源：长城证券-实时资讯）</span>。利空A股</div>
+<div class="cue p" data-i="53">持续一年多后，存储芯片超级涨价周期或将于2027年终结，NAND Flash（闪存）与DRAM（内存）价格走势将现分化</div></div>
+    <audio id="player" src="briefing.mp3" preload="auto" autoplay playsinline webkit-playsinline controls style="width:100%;margin:14px 0 4px"></audio>
+    <div class="foot">女声朗读 · 每条概括都会播报 · 来源 / 原文链接不播报 · 当前条目高亮并自动滚动</div>
+  </div>
+<script>
+  var CUES = [{"i": 0, "start": 0.1, "end": 4.66}, {"i": 1, "start": 4.66, "end": 12.38}, {"i": 2, "start": 12.38, "end": 19.26}, {"i": 3, "start": 19.26, "end": 26.24}, {"i": 4, "start": 26.24, "end": 32.95}, {"i": 5, "start": 32.95, "end": 44.12}, {"i": 6, "start": 44.12, "end": 52.52}, {"i": 7, "start": 52.52, "end": 60.9}, {"i": 8, "start": 60.9, "end": 67.62}, {"i": 9, "start": 67.62, "end": 75.36}, {"i": 10, "start": 75.36, "end": 76.55}, {"i": 11, "start": 76.55, "end": 79.4}, {"i": 12, "start": 79.4, "end": 82.65}, {"i": 13, "start": 82.65, "end": 93.75}, {"i": 14, "start": 93.75, "end": 98.3}, {"i": 15, "start": 98.3, "end": 105.85}, {"i": 16, "start": 105.85, "end": 116.7}, {"i": 18, "start": 116.7, "end": 123.7}, {"i": 19, "start": 123.7, "end": 132.24}, {"i": 20, "start": 132.24, "end": 136.84}, {"i": 22, "start": 136.84, "end": 138.01}, {"i": 23, "start": 138.01, "end": 148.34}, {"i": 24, "start": 148.34, "end": 162.95}, {"i": 25, "start": 162.95, "end": 167.78}, {"i": 27, "start": 167.78, "end": 170.94}, {"i": 28, "start": 170.94, "end": 178.01}, {"i": 29, "start": 178.01, "end": 181.28}, {"i": 30, "start": 181.28, "end": 190.12}, {"i": 32, "start": 190.12, "end": 195.84}, {"i": 33, "start": 195.84, "end": 199.56}, {"i": 34, "start": 199.56, "end": 210.94}, {"i": 36, "start": 210.94, "end": 214.53}, {"i": 37, "start": 214.53, "end": 219.85}, {"i": 38, "start": 219.85, "end": 226.49}, {"i": 39, "start": 226.49, "end": 235.58}, {"i": 41, "start": 235.58, "end": 240.18}, {"i": 42, "start": 240.18, "end": 251.25}, {"i": 44, "start": 251.25, "end": 257.46}, {"i": 45, "start": 257.46, "end": 265.94}, {"i": 46, "start": 265.94, "end": 277.09}, {"i": 48, "start": 277.09, "end": 279.15}, {"i": 49, "start": 279.15, "end": 289.57}, {"i": 50, "start": 289.57, "end": 301.01}, {"i": 52, "start": 301.01, "end": 308.4}, {"i": 53, "start": 308.4, "end": 319.7}];
+  var player = document.getElementById('player');
+  var btn = document.getElementById('playBtn');
+  var rateSel = document.getElementById('rate');
+  var overlay = document.getElementById('overlay');
+  var startBtn = document.getElementById('startBtn');
+  var wakeState = document.getElementById('wakeState');
+  var followBtn = document.getElementById('followBtn');
+  var nodes = document.querySelectorAll('.cue');
+  var useAudio = !!player;
+  var follow = true, lastIdx = -1, wakeLock = null, nosleep = null;
+
+  // ---------- 屏幕常亮 ----------
+  function setState(txt, on) {
+    wakeState.textContent = '屏幕常亮：' + txt;
+    wakeState.className = 'state' + (on ? ' on' : '');
+  }
+  async function keepAwake(on) {
+    if (!on) {
+      if (wakeLock) { try { wakeLock.release(); } catch (e) {} wakeLock = null; }
+      if (nosleep) { try { nosleep.pause(); } catch (e) {} }
+      setState('已关闭', false);
+      return;
+    }
+    // 标准方案：Screen Wake Lock API（Android Chrome / Edge、Safari 16.4+）
+    if ('wakeLock' in navigator) {
+      try {
+        if (!wakeLock) {
+          wakeLock = await navigator.wakeLock.request('screen');
+          wakeLock.addEventListener('release', function () { wakeLock = null; });
+        }
+        setState('已开启', true);
+        return;
+      } catch (e) { /* 落到兜底方案 */ }
+    }
+    // 兜底：iOS 老版本用 1px 静音视频循环阻止锁屏
+    try {
+      if (!nosleep) {
+        var c = document.createElement('canvas'); c.width = c.height = 1;
+        c.getContext('2d').fillRect(0, 0, 1, 1);
+        nosleep = document.createElement('video');
+        nosleep.setAttribute('playsinline', ''); nosleep.muted = true;
+        nosleep.style.cssText = 'position:fixed;width:1px;height:1px;opacity:0;pointer-events:none';
+        nosleep.srcObject = c.captureStream(1);
+        document.body.appendChild(nosleep);
+      }
+      nosleep.play().catch(function () {});
+      setState('已开启(兼容)', true);
+    } catch (e) { setState('浏览器不支持', false); }
+  }
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'visible') {
+      var playing = useAudio ? !player.paused : false;
+      if (playing) keepAwake(true);
+    }
+  });
+
+  // ---------- 文字同步高亮 ----------
+  function highlight() {
+    if (!CUES.length || !useAudio) return;
+    var t = player.currentTime, idx = -1;
+    for (var i = 0; i < CUES.length; i++) {
+      if (t >= CUES[i].start && t < CUES[i].end) { idx = CUES[i].i; break; }
+    }
+    if (idx < 0 && t >= CUES[CUES.length - 1].end) idx = CUES[CUES.length - 1].i;
+    if (idx === lastIdx) return;
+    lastIdx = idx;
+    for (var j = 0; j < nodes.length; j++) {
+      nodes[j].classList.toggle('active', +nodes[j].dataset.i === idx);
+    }
+    if (follow && idx >= 0) {
+      var el = document.querySelector('.cue.active');
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }
+  followBtn.onclick = function () {
+    follow = !follow;
+    followBtn.textContent = '跟随：' + (follow ? '开' : '关');
+    followBtn.className = 'toggle' + (follow ? '' : ' off');
+  };
+
+  if (useAudio) {
+    player.addEventListener('timeupdate', highlight);
+    player.onplay = function () { btn.textContent = '⏸ 暂停'; keepAwake(true); };
+    player.onpause = function () { btn.textContent = '语音版'; keepAwake(false); };
+    player.onended = function () { btn.textContent = '语音版'; keepAwake(false); };
+    btn.onclick = function () { player.paused ? player.play() : player.pause(); };
+    rateSel.onchange = function () { player.playbackRate = parseFloat(rateSel.value); };
+    if (startBtn) startBtn.onclick = function () {
+      player.playbackRate = parseFloat(rateSel.value);
+      try { player.play(); } catch (e) {}
+      overlay.style.display = 'none'; keepAwake(true);
+    };
+    // 打开即播：微信 / iOS 对有声自动播放有系统限制，做三层兜底
+    // ① 直接播 ② 微信 JSBridge 就绪回调里播 ③ 首次触屏/点击任意处播
+    var started = false;
+    function hideOverlay() { overlay.style.display = 'none'; }
+    function tryPlay() {
+      if (started) return;
+      player.playbackRate = parseFloat(rateSel.value);
+      var p;
+      try { p = player.play(); } catch (e) { return; }
+      if (p && p.then) {
+        p.then(function () {
+          started = true; hideOverlay(); keepAwake(true);
+          document.removeEventListener('touchstart', onGesture);
+          document.removeEventListener('click', onGesture);
+        }).catch(function () {
+          setTimeout(function () { if (!started) overlay.style.display = 'flex'; }, 600);
+        });
+      } else {
+        started = true; hideOverlay(); keepAwake(true);
+      }
+    }
+    function onGesture() { tryPlay(); }
+    document.addEventListener('touchstart', onGesture, { passive: true });
+    document.addEventListener('click', onGesture, { passive: true });
+    overlay.addEventListener('touchstart', function (e) { e.stopPropagation(); tryPlay(); }, { passive: true });
+    overlay.addEventListener('click', function (e) { e.stopPropagation(); tryPlay(); });
+    window.addEventListener('load', function () {
+      setTimeout(tryPlay, 100);
+      if (typeof WeixinJSBridge !== 'undefined' && WeixinJSBridge.invoke) {
+        WeixinJSBridge.invoke('getNetworkType', {}, function () { tryPlay(); });
+      } else {
+        document.addEventListener('WeixinJSBridgeReady', function () {
+          try { WeixinJSBridge.invoke('getNetworkType', {}, function () { tryPlay(); }); } catch (e) {}
+        });
+      }
+      setTimeout(function () { if (!started && player.paused) overlay.style.display = 'flex'; }, 900);
+    });
+  } else {
+    // 兜底：浏览器自带朗读（无 mp3 时）
+    var synth = window.speechSynthesis, utter = null, playing = false;
+    function pickVoice() {
+      var vs = synth.getVoices();
+      for (var i = 0; i < vs.length; i++)
+        if (/zh|cmn|Chinese/i.test(vs[i].lang + vs[i].name)) return vs[i];
+      return null;
+    }
+    function start() {
+      var lines = [];
+      for (var i = 0; i < nodes.length; i++) {
+        if (nodes[i].classList.contains('detail')) continue;
+        var clone = nodes[i].cloneNode(true);
+        var s = clone.querySelector('.src'); if (s) s.remove();
+        lines.push(clone.textContent.replace(/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}]/gu, '').trim());
+      }
+      utter = new SpeechSynthesisUtterance(lines.filter(Boolean).join('。'));
+      utter.lang = 'zh-CN'; utter.rate = parseFloat(rateSel.value);
+      var v = pickVoice(); if (v) utter.voice = v;
+      utter.onend = utter.onerror = function () { playing = false; btn.textContent = '语音版'; keepAwake(false); };
+      synth.cancel(); synth.speak(utter);
+      playing = true; btn.textContent = '⏸ 暂停'; keepAwake(true);
+    }
+    btn.onclick = function () {
+      if (!synth) { alert('当前浏览器不支持语音朗读'); return; }
+      if (playing) { synth.pause(); playing = false; btn.textContent = '▶️ 继续'; keepAwake(false); return; }
+      if (synth.paused && utter) { synth.resume(); playing = true; keepAwake(true); return; }
+      start();
+    };
+    if (startBtn) startBtn.onclick = function () { try { start(); } catch (e) {} overlay.style.display = 'none'; };
+    if (synth) synth.onvoiceschanged = pickVoice;
+    window.addEventListener('load', function () {
+      if (synth) { try { start(); } catch (e) {} }
+      setTimeout(function () { if (!playing) overlay.style.display = 'flex'; }, 600);
+    });
+  }
+</script>
+</body>
+</html>
